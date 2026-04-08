@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip show:*)",
+      "Bash(pip list:*)",
+      "Bash(python -c \"import api.main\")",
+      "Bash(python -c \"import api.escalation\")",
+      "Bash(python -c \"import db.store; import api.tax_routes\")",
+      "Bash(uvicorn api.main:app --host 127.0.0.1 --port 8765 --log-level warning)",
+      "Bash(python -m uvicorn api.main:app --host 127.0.0.1 --port 8765 --log-level warning)",
+      "Bash(curl -s http://127.0.0.1:8765/health)",
+      "Bash(python -m uvicorn api.main:app --host 127.0.0.1 --port 8766)",
+      "Bash(curl -s http://127.0.0.1:8766/health)",
+      "Bash(python -m json.tool)",
+      "Bash(curl -sv http://127.0.0.1:8766/health)",
+      "Bash(python -c ':*)",
+      "Bash(git config:*)",
+      "Bash(gh auth:*)",
+      "Bash(git --version)"
+    ]
+  }
+}

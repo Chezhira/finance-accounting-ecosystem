@@ -1,0 +1,285 @@
+============================================================
+PHASE 4B RAW FIXTURES — Dashboard Copy-Paste Test Data
+Finance & Accounting AI Ecosystem
+============================================================
+Use these in the dashboard manually (Treasury tab or Corp Finance tab once wired in Phase 4C).
+Each fixture block = one agent test. Copy the RAW DATA block into the dashboard input field.
+
+------------------------------------------------------------
+FIXTURE 1 — CashFlowAnalyst | 13-week forecast | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: Q2-2025
+Analysis Type: 13week_forecast
+
+RAW DATA:
+Opening cash balance: TZS 850,000,000
+Weekly inflows (average): TZS 120,000,000 (export receivables USD 45,000 @ 2,650)
+Weekly outflows (average): TZS 95,000,000 (payroll TZS 40M, suppliers TZS 35M, utilities TZS 20M)
+Debt service: TZS 200,000,000 due in Week 6 (quarterly loan repayment, NMB Bank)
+Covenant: minimum cash balance TZS 500,000,000 at all times (NMB facility covenant)
+FX exposure: USD 180,000 receivable outstanding (3 invoices)
+
+Expected output: 8-week forecast, covenant breach warning (Week 6 net drops near limit), FX flag.
+
+------------------------------------------------------------
+FIXTURE 2 — LiquidityManager | LCR analysis | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: March-2025
+Analysis Type: liquidity_coverage
+
+RAW DATA:
+HQLA (High Quality Liquid Assets):
+  - BoT Treasury Bills (91-day): TZS 300,000,000
+  - NMB overnight deposits: TZS 150,000,000
+  - DSE Government Bonds: TZS 200,000,000
+  Total HQLA: TZS 650,000,000
+
+30-day expected outflows:
+  - Supplier payments: TZS 380,000,000
+  - Loan repayment (NMB): TZS 200,000,000
+  - Payroll: TZS 160,000,000
+  - VAT payment (TRA, due 20th): TZS 54,000,000
+  Total outflows: TZS 794,000,000
+
+30-day expected inflows:
+  - Customer receipts: TZS 420,000,000
+  Capped inflows (75% max): TZS 315,000,000
+
+Net stressed outflows: TZS 479,000,000
+Intercompany loan to subsidiary: TZS 100,000,000 outstanding
+
+Expected output: LCR = 650/479 = ~135.7% (>100% = PASS). Intercompany flag. CFP suggestions.
+
+------------------------------------------------------------
+FIXTURE 3 — InvestmentStrategist | Yield optimisation | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: Q1-2025
+Analysis Type: yield_optimisation
+
+RAW DATA:
+Current short-term investment portfolio (TZS):
+  - Call deposit at NMB: TZS 200,000,000 @ 6% p.a.
+  - 91-day T-bill (BoT): TZS 150,000,000 @ 9.75% p.a.
+  - CRDB call account: TZS 80,000,000 @ 5.5% p.a.
+
+Cash available for additional investment: TZS 120,000,000 (horizon: 3-6 months)
+Rating: NMB Bank — Fitch B+; CRDB Bank — Fitch B
+Investment policy: no single counterparty > 30% of portfolio
+ESG mandate: prefer green bonds / sustainability-linked instruments if available
+
+Expected output: Weighted yield calc, NMB concentration check (200/550 = 36% — BREACH), 
+T-bill recommendation for surplus cash, ESG suggestion.
+
+------------------------------------------------------------
+FIXTURE 4 — TreasuryManager | FX hedging | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: Q2-2025
+Analysis Type: fx_hedging
+
+RAW DATA:
+FX Exposure Summary:
+  USD receivables: USD 350,000 (avg collection 60 days)
+  USD payables: USD 120,000 (avg payment 30 days)
+  Net USD long: USD 230,000
+
+Revenue in USD: 35% of total revenue (HIGH — flag)
+Functional currency: TZS
+Current spot rate: USD/TZS = 2,650 (sandbox estimate)
+BoT forex retention: exporters retain 70% in TZS
+
+Existing hedges: None
+Available instruments: NMB Bank FX forwards (USD/TZS, up to 90 days)
+Interest rate exposure: TZS 500,000,000 floating @ TANLIBOR + 3.5% (reset quarterly)
+
+Expected output: Net open position USD 230,000, hedge recommendation (forward), 
+IFRS 9 cash flow hedge classification, BoT retention flag, interest rate risk flag.
+
+------------------------------------------------------------
+FIXTURE 5 — CapitalMarketsAnalyst | Covenant review | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: FY-2024
+Analysis Type: covenant_review
+
+RAW DATA:
+NMB Term Loan — TZS 1,200,000,000 outstanding (5-year, drawn 2022)
+Covenants:
+  1. Net Debt / EBITDA ≤ 3.5x — actual: Net Debt TZS 1,050,000,000, EBITDA TZS 280,000,000
+  2. Interest Coverage Ratio ≥ 3.0x — EBIT TZS 200,000,000, Interest TZS 84,000,000
+  3. Minimum Net Worth ≥ TZS 800,000,000 — actual: TZS 920,000,000
+  4. DSCR ≥ 1.2x — CFADS TZS 210,000,000, Debt Service TZS 185,000,000
+
+DSE Bond: TZS 500,000,000, 7-year, coupon 12.5%, maturing 2027
+Bank concentration: NMB 80% of all facilities
+
+Expected output:
+  Covenant 1: 1,050/280 = 3.75x — BREACH (limit 3.5x) → CRITICAL flag
+  Covenant 2: 200/84 = 2.38x — BREACH (limit 3.0x) → CRITICAL flag
+  Covenant 3: 920M ≥ 800M — PASS
+  Covenant 4: 210/185 = 1.14x — BREACH (limit 1.2x) → CRITICAL flag
+  Bank concentration 80% → MEDIUM flag
+
+------------------------------------------------------------
+FIXTURE 6 — HedgeFundManager | Portfolio review | US
+------------------------------------------------------------
+Tenant: usfamily_llc
+Jurisdiction: United States
+Period: Q1-2025
+Analysis Type: portfolio_review
+
+RAW DATA:
+Portfolio NAV: USD 2,500,000
+Strategy: Multi-strategy (long/short equity 50%, macro 30%, event-driven 20%)
+
+Holdings:
+  - US equity long book: USD 1,800,000 (Level 1)
+  - US equity short book: USD -600,000 (Level 1)
+  - S&P 500 put options: USD 150,000 premium paid (Level 2)
+    Strike 5,200; Expiry Jun 2025; Delta -0.35; Vega USD 8,500/vol point
+  - Private credit note: USD 200,000 (Level 3 — illiquid)
+  - Gold futures: USD 250,000 notional (Level 1)
+
+Gross leverage: 2.4x NAV
+Net exposure: 48% long
+12-month return: +18.5% gross / +15.2% net (after 2/20 fees)
+Benchmark (S&P 500 TR): +24.1%
+Max drawdown: -8.3%
+Volatility: 14.2% annualised
+Prime broker: Goldman Sachs (100% — single PB)
+
+Expected output: Level 3 = 200/2500 = 8% (below 20% threshold — PASS), 
+gross leverage 2.4x (below 3x — PASS), single PB 100% → MEDIUM flag,
+alpha = 15.2% - 24.1% = -8.9% (underperformance vs benchmark → flag),
+Sharpe estimate, risk metrics, ASC 815/820 classification.
+
+------------------------------------------------------------
+FIXTURE 7 — InvestmentBanker | M&A advisory | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: 2025
+Analysis Type: ma_advisory
+
+RAW DATA:
+Target: Simba Manufacturing Ltd (Tanzania) — private, unlisted
+Revenue (LTM): TZS 4,200,000,000
+EBITDA (LTM): TZS 630,000,000 (margin 15%)
+Net Debt: TZS 800,000,000
+Industry: FMCG manufacturing
+
+Acquiror: TanzaCorp Ltd — strategic buyer, same sector
+Deal rationale: vertical integration, geographic expansion
+Proposed structure: 100% cash acquisition
+Indicative price: TZS 5,500,000,000 (enterprise value)
+Combined market share post-deal: ~38%
+Tanzania FCC merger threshold: TZS 3,500,000,000 combined turnover
+
+Expected output: 
+  EV/EBITDA = 5,500/630 = 8.7x (FMCG typical range 5-8x → slight premium)
+  Implied equity = 5,500 - 800 = TZS 4,700,000,000
+  FCC notification required (combined turnover exceeds threshold) → HIGH flag
+  Football field valuation, merger rationale, fairness opinion disclaimer.
+
+------------------------------------------------------------
+FIXTURE 8 — VPCapitalMarkets | IPO readiness | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: 2025
+Analysis Type: ipo_readiness
+
+RAW DATA:
+Company: TanzaCorp Ltd — manufacturing + distribution
+Revenue (FY2024): TZS 8,500,000,000
+EBITDA (FY2024): TZS 1,275,000,000
+Net Profit (FY2024): TZS 680,000,000
+3-year audited accounts: Yes (KPMG Tanzania, clean opinion)
+Board: 4 directors — CEO, CFO, 2 family members (NO independent directors)
+Audit committee: Not established
+IFRS compliance: Yes (adopted 2022)
+DSE listing: Main Investment Market (MIM) — minimum float 25%
+Target raise: TZS 2,000,000,000 (primary)
+Shareholders: Family-owned (100%)
+
+Expected output: 
+  Governance RED (no independent directors, no audit committee) → CRITICAL readiness gaps
+  Financial reporting GREEN (3yr audited IFRS accounts)
+  Estimated months to IPO: 12-18 months (governance remediation required)
+  CMSA prospectus required flag.
+
+------------------------------------------------------------
+FIXTURE 9 — ValuationsAnalyst | Football field | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: FY-2024
+Analysis Type: football_field
+
+RAW DATA:
+Subject: Simba Manufacturing Ltd (Tanzania)
+Valuation Date: 31 March 2025
+Revenue (LTM): TZS 4,200,000,000
+EBITDA (LTM): TZS 630,000,000
+EBIT (LTM): TZS 430,000,000
+Net Income (LTM): TZS 250,000,000
+Total Debt: TZS 800,000,000
+Cash: TZS 120,000,000
+Capex (LTM): TZS 180,000,000
+D&A: TZS 200,000,000
+NWC change: TZS -50,000,000
+Tax rate: 30%
+Revenue growth Y1-3: 12% CAGR
+Revenue growth Y4-5: 8%
+Terminal growth: 3.5%
+Industry: FMCG manufacturing, Tanzania
+
+Expected output: Full WACC decomp (TZ risk-free ~12.5%, ERP ~8%), DCF enterprise value,
+EV/EBITDA comps range, precedent transactions, football field summary,
+IFRS 13 Level 3 classification for DCF inputs.
+
+------------------------------------------------------------
+FIXTURE 10 — CapitalBudgetingManager | CapEx appraisal | Tanzania
+------------------------------------------------------------
+Tenant: tanzacorp_001
+Jurisdiction: Tanzania
+Period: 2025
+Analysis Type: capex_appraisal
+
+RAW DATA:
+Project A — New production line (Dar es Salaam):
+  Investment: TZS 1,200,000,000
+  Annual incremental EBITDA: TZS 300,000,000
+  Life: 8 years | Terminal value: TZS 100,000,000
+  Asset: Industrial machinery (TRA Class 1 — 37.5% diminishing balance)
+
+Project B — Warehouse Arusha (lease vs buy):
+  Purchase: TZS 800,000,000 (TRA Class 4 — 5% p.a.)
+  Lease: TZS 80,000,000/year for 10 years
+  Ownership savings: TZS 15,000,000/year
+
+Project C — ERP upgrade:
+  Investment: TZS 350,000,000
+  Annual savings: TZS 120,000,000
+  Life: 5 years | Asset: Computer (TRA Class 1 — 37.5%)
+
+WACC (estimate): 14.5%
+Budget available: TZS 1,500,000,000
+
+Expected output: 
+  Project A: NPV, IRR, payback. Class 1 depreciation tax shield modelled.
+  Project B: Lease vs buy NPV comparison; IFRS 16 ROU asset estimate.
+  Project C: NPV, IRR, payback. Class 1 tax shield.
+  Portfolio: Budget TZS 1,500M → can fully fund A (1,200M) + C (350M) = 1,550M > budget.
+  Recommendation: A + C (higher combined NPV); defer B pending lease vs buy analysis.
+============================================================
+END OF PHASE 4B FIXTURES
+============================================================

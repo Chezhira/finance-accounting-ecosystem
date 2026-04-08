@@ -1,0 +1,549 @@
+# FinOps Ecosystem — Phase 4A Raw Data Fixtures
+# For manual testing via the Dashboard → Raw Text tab or API /ingest/text
+# 
+# Each section is clearly labelled. Copy everything between the ===== markers.
+# Select the matching tenant + jurisdiction in the dashboard before submitting.
+#
+# Tenant IDs used:
+#   acme_tz_001   — Acme Trading Ltd (Tanzania, IFRS)
+#   smith_llc_us  — Smith Family LLC (United States, US GAAP)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 1 — FP&A ANALYST | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: variance analysis, KPI check, Q1 actuals vs budget
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — Q1 2026 MANAGEMENT ACCOUNTS (UNAUDITED)
+Jurisdiction: Tanzania | Currency: TZS | Standard: IFRS | Period: Q1 2026
+
+P&L SUMMARY (TZS millions)
+                        Actual Q1-2026    Budget Q1-2026    Prior Q1-2025
+Revenue                      4,850             5,200             3,980
+  Product Sales               3,200             3,500             2,700
+  Service Revenue             1,450             1,500             1,180
+  Other Income                  200               200               100
+Cost of Goods Sold           2,750             2,860             2,150
+Gross Profit                 2,100             2,340             1,830
+Gross Margin %                43.3%             45.0%             46.0%
+
+Operating Expenses           1,420             1,380             1,150
+  Salaries & Wages             680               650               540
+  Rent & Utilities             210               200               185
+  Marketing                    180               200               140
+  Admin & General              230               220               195
+  Depreciation                 120               110                90
+
+EBITDA                         800               960               770
+EBITDA Margin %               16.5%             18.5%             19.3%
+Finance Costs                   95                80                70
+PBT                            705               880               700
+Tax (30% estimated)            212               264               210
+PAT                            493               616               490
+
+BALANCE SHEET SNAPSHOT (TZS millions)
+Cash & Bank                    320
+Trade Receivables            1,240   DSO: 74 days vs 60 days budget
+Inventory                      980   DIO: 130 days vs 90 days budget
+Trade Payables                 890   DPO: 118 days vs 90 days budget
+Short-term Debt              1,500
+Long-term Debt               2,200
+
+NOTES:
+- Revenue shortfall driven by delayed Dar es Salaam port clearances on product sales.
+- Salary overspend: 2 additional hires vs budget (IT and compliance roles).
+- Marketing underspend: digital campaign delayed to Q2.
+- DSO deterioration: 3 large customers (>TZS 300M each) extended payment terms.
+- Inventory build-up: supply chain pre-stocking ahead of Finance Act 2025 VAT changes.
+- VAT returns Q1: Jan and Feb filed on time; Mar-2026 overdue as of today 06-Apr-2026.
+
+REQUEST: Please perform a Q1 2026 variance analysis. Identify key drivers, flag risks, 
+and provide recommendations for management action.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 2 — FP&A ANALYST (KPI) | Tenant: smith_llc_us | Jurisdiction: US
+# Use for: monthly KPI tracking, SE tax flag, quarterly estimated tax reminder
+# ═════════════════════════════════════════════════════════════════════════════
+
+SMITH FAMILY LLC — MARCH 2026 KPI PACK
+Jurisdiction: United States | Currency: USD | Standard: US GAAP | Entity: Single-member LLC
+
+MONTHLY P&L
+                        Mar-2026    Feb-2026    Mar-2025    YTD-2026    Budget YTD
+Revenue                  142,500     138,200     121,000     418,300      435,000
+COGS                      78,400      76,100      68,500     231,200      239,250
+Gross Profit              64,100      62,100      52,500     187,100      195,750
+Gross Margin %             45.0%       44.9%       43.4%       44.7%        45.0%
+Operating Expenses        38,200      37,400      34,200     112,900      117,000
+EBITDA                    25,900      24,700      18,300      74,200       78,750
+Net Income                21,500      20,300      14,800      61,200       64,500
+
+CASH FLOW
+Operating Cash Flow       19,800      22,100      16,200      57,400       63,000
+CAPEX                      4,200           0       1,500       8,200        6,000
+Free Cash Flow            15,600      22,100      14,700      49,200       57,000
+
+KEY METRICS
+Headcount                     12          12          10
+Revenue per Employee      11,875      11,517      12,100
+Customer Count               247         241         198
+Average Order Value          577         573         611
+Customer Acquisition Cost    420         398         385
+LTV:CAC Ratio                4.2x        4.3x        4.5x
+
+TAX NOTE (for operator awareness):
+Q1 estimated tax due: April 15, 2026
+YTD net LLC income: $61,200
+SE tax base (x 92.35%): $56,518
+Estimated SE tax: $8,647
+QBI deduction (20% of QBI): $12,240
+
+REQUEST: Run KPI analysis for March 2026. Flag any metrics trending negative.
+Highlight the upcoming Q1 estimated tax deadline and SE tax calculation.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 3 — FP&A MANAGER (3-STATEMENT) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: full-year 2026 3-statement model, 3 scenarios
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — FY2026 PLANNING MODEL INPUT
+Jurisdiction: Tanzania | Currency: TZS millions | IFRS
+
+FY2025 ACTUALS (Audited Base)
+Revenue:                17,200
+COGS (55%):              9,460
+Gross Profit:            7,740
+Opex:                    5,160
+EBITDA:                  2,580  (15.0% margin)
+Depreciation:              420
+EBIT:                    2,160
+Finance Costs:             340
+PBT:                     1,820
+Tax (30%):                 546
+PAT:                     1,274
+
+Opening Cash:              450
+Capex FY2025:              680
+Working Capital Change:   (220)  increase in WC
+Closing Cash:              890
+
+Long-term Debt b/f:      3,800
+New borrowing:             500
+Repayments:               (300)
+Closing Debt:            4,000
+
+FY2026 MANAGEMENT ASSUMPTIONS (Base Case)
+Revenue growth:          +12%  (new Mwanza branch Q3)
+COGS %:                  54%   (efficiency improvement)
+Opex growth:             +8%   (inflation + Mwanza branch)
+Capex:                 1,200   (Mwanza TZS 700M + fleet TZS 500M)
+New debt:                800   at 15% p.a. (BOT base + 3%)
+Debt repayment:          400
+Dividend proposed:       300   (subject to board)
+DSO target:           65 days
+DIO target:          100 days
+DPO target:           90 days
+
+KEY RISKS TO CHALLENGE IN SCENARIOS
+1. Port clearance delays: revenue shortfall risk TZS 800M
+2. TZS depreciation: USD/TZS moving from 2,680 to 2,850+ (USD imports = 40% COGS)
+3. TANESCO tariff increase H2 2026
+4. TRA transfer pricing audit — potential TZS 500M liability
+5. Mwanza branch delayed by 1 quarter
+
+REQUEST: Build a full FY2026 3-statement model with Base, Upside, and Downside scenarios.
+Include working capital waterfall and debt schedule. Flag key assumptions and risks.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 4 — FP&A MANAGER (CAPEX) | Tenant: smith_llc_us | Jurisdiction: US
+# Use for: CAPEX appraisal — CNC laser engraver investment decision
+# ═════════════════════════════════════════════════════════════════════════════
+
+SMITH FAMILY LLC — CAPEX APPRAISAL: CNC LASER ENGRAVER
+Jurisdiction: US | Currency: USD | US GAAP
+
+INVESTMENT COST
+Equipment:              $85,000
+Installation:            $8,500
+Training:                $3,500
+Total:                  $97,000
+
+PROJECTED RETURNS (Annual at full utilisation)
+Additional revenue:    $120,000
+Additional COGS (40%): $48,000
+Gross profit uplift:    $72,000
+Additional opex:        $18,000  (power, maintenance, operator overtime)
+Incremental EBITDA:     $54,000
+
+FINANCING STRUCTURE
+Cash (50%):             $48,500
+SBA Loan (50%):         $48,500  at 7.5% p.a. over 5 years
+Annual debt service:    ~$11,800
+
+KEY ASSUMPTIONS
+Useful life:          7 years
+Salvage value:        $8,500  (10% of equipment cost)
+Depreciation:         Straight-line
+Tax treatment:        LLC pass-through — no corporate tax. Section 179 full expensing Year 1.
+WACC / hurdle rate:   12%  (owner's required return)
+Revenue ramp:         40% Year 1 → 70% Year 2 → 100% Year 3+
+
+SENSITIVITY CASES
+Bearish (40% utilisation): Revenue $80,000, EBITDA $28,000
+Base (60%):                Revenue $120,000, EBITDA $54,000
+Bull (80%):                Revenue $160,000, EBITDA $80,000
+
+REQUEST: Perform full CAPEX appraisal. Calculate NPV, IRR, and payback period for all 3 cases.
+Include Section 179 tax timing benefit in Year 1 cash flow. Recommend proceed / review / reject.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 5 — SENIOR FP&A MANAGER (LRP) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: 5-year long-range plan, board pack
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — 5-YEAR LRP INPUT
+Jurisdiction: Tanzania | Currency: TZS millions | IFRS | FY2026–FY2030
+
+FY2025 BASE (Audited)
+Revenue: 17,200 | EBITDA: 2,580 (15.0%) | Net Debt: 3,110 | Net Debt/EBITDA: 1.2x
+ROCE: 18.5% | Headcount: 47
+
+STRATEGIC INITIATIVES
+1. Mwanza branch: Q3 FY2026
+2. Arusha branch: FY2028
+3. Zanzibar (if legal structure allows): FY2029
+4. ERP upgrade to Odoo: FY2027 — expected to reduce month-end close from 12 to 5 days
+5. Private label range: FY2027 launch, 15pp margin uplift on own-brand SKUs
+6. B2B supply agreements: 3-year fixed-price contracts from FY2026
+
+MACRO ASSUMPTIONS (Tanzania)
+GDP growth: 5.5% p.a. (IMF WEO April 2026)
+CPI: 4.8% p.a.
+TZS/USD: 2,700 flat FY2026-FY2028, then 5% p.a. depreciation
+Corp tax: 30% — no changes anticipated
+BOT policy rate: 6.0% — stable outlook
+
+STRATEGIC REVENUE TARGETS
+FY2026: 19,260  (+12%)
+FY2027: 22,350  (+16%)
+FY2028: 26,000  (+16%)
+FY2029: 30,000  (+15%)
+FY2030: 34,500  (+15%)
+
+TARGET EBITDA MARGIN PATH
+FY2026: 15.5% | FY2027: 16.5% | FY2028: 17.5% | FY2029: 18.0% | FY2030: 19.0%
+
+FINANCING MILESTONES
+FY2026: TZS 800M debt (Mwanza)
+FY2027: TZS 2,000M debt (ERP + e-commerce)
+FY2028: Strategic equity or PE minority considered (>TZS 3,000M needed)
+Max leverage covenant: Net Debt/EBITDA ≤ 2.5x at all times
+
+KEY STRATEGIC RISKS
+1. 2 South African FMCG competitors entering TZ market FY2026
+2. TRA audit and transfer pricing exposure
+3. Currency — 40% of COGS is USD-denominated
+4. Talent: CFO succession required by FY2028
+5. Infrastructure: Mwanza road/port reliability risk
+
+REQUEST: Build 5-year LRP with integrated financials for all 5 years. 
+Prepare board-pack KPI summary. Identify 3 key strategic risks with financial quantification.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 6 — VP FINANCE (WACC) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: WACC calculation, capital structure, debt vs equity financing decision
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — CAPITAL STRUCTURE REVIEW
+Jurisdiction: Tanzania | Currency: TZS millions | IFRS
+
+CURRENT BALANCE SHEET
+Total Assets:   18,400
+Equity:          6,890
+Short-term debt: 1,500  at avg 16.5% p.a.
+Long-term debt:  2,500  at avg 14.8% p.a.
+Total debt:      4,000
+Cash:              890
+Net Debt:        3,110
+
+WACC INPUTS
+Risk-free rate:         7.2%  (TZ 10yr government bond, BOT)
+Equity risk premium:    8.5%  (Damodaran Tanzania ERP)
+Beta (estimated):       1.15  (listed FMCG peers on DSE/USE)
+Size premium:           2.0%  (small/mid cap illiquidity)
+Blended cost of debt:  15.4%
+Corporate tax rate:    30%
+EV estimate:          ~12,500  (8x LTM EBITDA — comparable transactions)
+
+PEER BENCHMARKS (EAC listed FMCG)
+Avg Net Debt/EBITDA:    1.5x
+Avg EBITDA margin:     16.2%
+Avg ROCE:              17.8%
+Avg WACC (analyst est): 18–22%
+
+BOARD DECISION REQUIRED
+Option A: Borrow TZS 1,500M additional debt for Mwanza expansion
+  - Pro: Cheaper cost of capital, no dilution
+  - Con: Increases Net Debt/EBITDA to ~1.8x, interest rate risk
+
+Option B: Bring in PE minority investor (15-20% stake at ~8x EBITDA = ~TZS 2,000M)
+  - Pro: Reduces leverage, brings expertise
+  - Con: Dilution, governance changes, exit pressure in 5 years
+
+REQUEST: Calculate WACC under current and both proposed structures.
+Recommend optimal capital structure. Quantify impact of each option on EPS equivalent and ROCE.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 7 — DATA ANALYST (ANOMALY) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: statistical anomaly detection on expense ledger
+# WARNING: This data intentionally contains suspicious patterns for testing
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — Q1 2026 EXPENSE LEDGER EXTRACT (27 transactions)
+Tenant: acme_tz_001 | Currency: TZS | Period: Jan–Mar 2026
+
+TXN_ID  DATE        VENDOR                  CATEGORY        AMOUNT_TZS    APPROVED_BY
+TXN001  2026-01-05  Dar Supplies Co         Stationery         285,000     Mary K
+TXN002  2026-01-08  TeleTZ Ltd              Telecoms         1,240,000     Mary K
+TXN003  2026-01-12  Dar Supplies Co         Stationery         285,000     Mary K
+TXN004  2026-01-15  National Fuel Depot     Fuel             3,100,000     John M
+TXN005  2026-01-19  Mwanza Freight          Logistics        8,450,000     John M
+TXN006  2026-01-22  Unknown Vendor XYZ      Consultancy     22,000,000     CEO Direct
+TXN007  2026-01-25  Dar Supplies Co         Stationery         284,999     Mary K
+TXN008  2026-01-28  ABC Security            Security         2,100,000     Mary K
+TXN009  2026-02-02  TeleTZ Ltd              Telecoms         1,240,000     Mary K
+TXN010  2026-02-05  National Fuel Depot     Fuel             4,800,000     John M
+TXN011  2026-02-08  Fast Print Services     Marketing          890,000     Sarah A
+TXN012  2026-02-11  Mwanza Freight          Logistics        8,450,000     John M
+TXN013  2026-02-14  Unknown Vendor XYZ      Consultancy     22,000,000     CEO Direct
+TXN014  2026-02-18  Global Consulting Ltd   Consultancy     45,000,000     CEO Direct
+TXN015  2026-02-20  Dar Supplies Co         Stationery         285,500     Mary K
+TXN016  2026-02-24  Power Solutions TZ      Utilities        1,890,000     Mary K
+TXN017  2026-02-27  ABC Security            Security         2,100,000     Mary K
+TXN018  2026-03-03  National Fuel Depot     Fuel             3,200,000     John M
+TXN019  2026-03-06  TeleTZ Ltd              Telecoms         1,240,000     Mary K
+TXN020  2026-03-09  Unknown Vendor XYZ      Consultancy     22,000,000     CEO Direct
+TXN021  2026-03-12  Mwanza Freight          Logistics        8,450,000     John M
+TXN022  2026-03-15  Fast Print Services     Marketing          910,000     Sarah A
+TXN023  2026-03-18  Global Consulting Ltd   Consultancy     45,000,000     CEO Direct
+TXN024  2026-03-21  Dar Supplies Co         Stationery         285,000     Mary K
+TXN025  2026-03-25  ABC Security            Security         2,100,000     Mary K
+TXN026  2026-03-28  Power Solutions TZ      Utilities        1,920,000     Mary K
+TXN027  2026-03-31  Staff Expenses Pool     Reimbursements   9,800,000     CEO Direct
+
+SUMMARY
+Total expenses Q1:     TZS 318,309,499
+Budget Q1:             TZS 280,000,000  (overspend: 13.7%)
+Consultancy budget:    TZS  40,000,000
+Consultancy actual:    TZS 178,000,000  (345% over budget)
+CEO-approved spend:    TZS 224,800,000  (70.6% of total)
+Unknown Vendor XYZ:    3 invoices, no contract on file
+Global Consulting Ltd: 2 invoices, no contract on file
+
+REQUEST: Run statistical anomaly detection on this expense ledger.
+Apply Benford's Law pre-screening. Identify duplicates, outliers, and concentration risks.
+Flag any transactions requiring forensic review.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 8 — COMPLIANCE AUDITOR | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: COSO assessment, SoD conflicts, TRA compliance, policy gaps
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — COMPLIANCE REVIEW INPUT
+Jurisdiction: Tanzania | Period: FY2025 | IFRS | Companies Act 2002
+
+STAFFING
+Total employees: 47 | Finance team: 6 | IT: 2
+
+SEGREGATION OF DUTIES ISSUES
+1. AP Clerk A: initiates PO + raises invoice + posts to system + approves payment up to TZS 4.9M
+2. Payroll Officer: processes payroll AND maintains employee master file (add/remove staff)
+3. IT Manager: admin rights to accounting system AND approves IT vendor invoices
+4. CFO: approves payments AND reconciles bank accounts (no independent check)
+5. No independent journal entry review — accountants post and self-review
+
+REGULATORY STATUS
+TRA:
+- VAT: Jan-2026 filed ✓ | Feb-2026 filed ✓ | Mar-2026 OVERDUE (due 20-Apr-2026)
+- Corporate tax FY2024: filed timely ✓
+- Corporate tax FY2025: due 30-Jun-2026 — preparation not started
+- Provisional tax Q3: filed and paid TZS 420M ✓
+- Transfer pricing documentation: NOT PREPARED (related party = UAE parent)
+- WHT on imported services (s.83): 3 foreign consultant payments Q1 — WHT NOT deducted
+
+BRELA:
+- Annual return FY2025: filed 28-Feb-2026 ✓
+- Director changes (2 new directors, Jan-2026): filing PENDING
+
+COMPANIES ACT:
+- AGM: due within 6 months of year-end (by 30-Jun-2026) — not yet scheduled
+- Auditor appointment: contract expired Dec-2025 — not renewed
+
+POLICY GAPS
+- No whistleblower policy
+- No written anti-bribery and corruption policy
+- Expense reimbursement policy: last updated 2019
+- IT security policy: last updated 2021
+- No related-party transaction disclosure procedure
+
+REQUEST: Perform a full compliance audit. Assess COSO framework, document all SoD conflicts
+with severity ratings, map regulatory non-compliance items, and produce a compliance calendar
+with all upcoming deadlines and penalties.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 9 — AUDIT MANAGER (GOING CONCERN) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: ISA 570 going concern assessment, ISA 320 materiality, audit planning
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — FY2025 AUDIT INPUT PACK
+Jurisdiction: Tanzania | Currency: TZS millions | IFRS | ISA (NBAA)
+
+FY2025 FINANCIALS (DRAFT)
+Revenue:           17,200
+PBT:                1,820
+Total Assets:      18,400
+Total Equity:       6,890
+Net Debt:           3,110
+Net Debt/EBITDA:    1.2x
+Current Ratio:      1.08   (FY2024: 1.35 | FY2023: 1.52 — declining trend)
+Quick Ratio:        0.62   (below 1.0 — working capital stress)
+Interest Coverage:  6.4x
+FCF:               +890
+
+GOING CONCERN — NEGATIVE INDICATORS
+1. Current ratio below 1.2 and declining 3 consecutive years
+2. Short-term debt TZS 1,500M renewal due Apr-2026 — bank renewal letter not yet received
+3. Consultancy overspend TZS 138M — unbudgeted and under investigation
+4. Transfer pricing documentation missing — TRA audit risk (est. TZS 500M+ potential liability)
+5. Mar-2026 VAT return overdue
+6. External auditor contract expired Dec-2025 — no replacement appointed
+
+GOING CONCERN — MITIGATING FACTORS
+1. Profitable for 8 consecutive years
+2. Top 5 customers relationship >5 years each — stable revenue base
+3. Net Debt/EBITDA 1.2x well within bank covenant (max 3.0x)
+4. New TZS 800M facility in negotiation (term sheet stage)
+5. Asset sale planned: warehouse property TZS 1,200M (expected H2-2026)
+6. Board committed to waiving dividend if liquidity deteriorates
+
+PRIOR YEAR AUDIT REFERENCE
+Prior year opinion: Unqualified
+Prior year materiality: TZS 182M (approximately 1% of revenue)
+Uncorrected misstatement: TZS 28M (understatement of accruals — below materiality, carried forward)
+
+REQUEST: Perform ISA 570 going concern assessment for FY2025 audit.
+Calculate ISA 320 materiality (justify benchmark choice).
+Design audit programme for 3 highest-risk areas. Prepare audit committee summary.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 10 — QA AUDITOR (ITGC) | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: ITGC review, user access rights, change management, DR assessment
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — IT GENERAL CONTROLS REVIEW
+Jurisdiction: Tanzania | Period: FY2025 | Systems: QuickBooks Enterprise + Fishbowl
+
+USER ACCESS REVIEW — QuickBooks Enterprise
+Username           Role              Last Login      Admin?  Issue
+admin              System Admin      2026-01-15      YES     Shared password — 4 staff know it
+cfo_james          Full Access       2026-04-05      YES     Active CFO — appropriate
+accountant_mary    Full Access       2026-04-04      YES     Should be AP-only, not full access
+accountant_peter   Full Access       2026-03-28      YES     Maternity cover role — should be read-only
+ap_clerk_anna      AP + Payments     2026-04-05      NO      Can create AND approve own payments
+ap_clerk_ben       AP Only           2026-02-14      NO      DORMANT >45 days — access not revoked
+payroll_sarah      Payroll Full      2026-04-05      NO      Can add employees AND run payroll (SoD)
+it_manager_david   Full Access       2026-04-05      YES     IT role — no accounting access needed
+ex_employee_tom    Full Access       NEVER (2024)    NO      TERMINATED Dec-2024 — account active
+trainee_linda      Full Access       2026-01-20      NO      Temporary staff — excessive access level
+
+CHANGE MANAGEMENT
+- System update Feb-2026: no change log maintained, no rollback plan documented
+- Chart of accounts: 3 new accounts added Mar-2026 by accountant_mary — no approval obtained
+- Sync settings (Fishbowl↔QuickBooks) changed Jan-2026 by it_manager_david — no approval
+
+BACKUP & DISASTER RECOVERY
+- Daily automated cloud backup: in place ✓
+- Last backup restoration test: NEVER
+- RTO: Not defined | RPO: Not defined
+- DR plan: Not documented
+
+PROCESS IMPROVEMENT OBSERVATIONS
+- Month-end close: 12 days avg (industry benchmark: 5–7 days)
+- VAT reconciliation: manual Excel (no system-enforced control)
+- Bank reconciliation: weekly (should be daily given cash position risk)
+- Supplier reconciliation: top 10 vendors only (60+ active vendors unreconciled)
+
+IT SECURITY
+- Password minimum length: not enforced in system
+- MFA: not enabled on any account
+- VPN: not used for remote access
+- Last security audit: never conducted
+
+REQUEST: Perform a full ITGC review using COBIT 2019 framework.
+Rate each ITGC domain (access, change, operations, development).
+Identify all access issues with severity. Flag BCP/DR gaps.
+Recommend process improvements with estimated time savings.
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FIXTURE 11 — FORENSIC AUDITOR | Tenant: acme_tz_001 | Jurisdiction: TZ
+# Use for: procurement fraud indicators, unknown vendors, Benford screening
+# NOTE: Anonymised — no real names. Use "Employee A", "Vendor X" framing.
+# ═════════════════════════════════════════════════════════════════════════════
+
+ACME TRADING LTD — FORENSIC PROCUREMENT REVIEW
+Jurisdiction: Tanzania | Period: Q1 2026 | Referral from: Data Analyst + Compliance Auditor
+
+REFERRAL BASIS
+Consultancy spend 345% over budget (TZS 178M actual vs TZS 40M budget).
+Senior approver (referred to as Approver A) is sole signatory on all suspect transactions.
+No contracts on file. Two vendors share same PO Box. Flagged for forensic review.
+
+VENDOR PROFILE — Vendor X (referred to as "Unknown Vendor XYZ" in ledger)
+TIN lookup: not returning result from TRA ETIMS portal
+BRELA: not registered in public company register
+Address: PO Box 4421, Dar es Salaam — no physical address
+Bank: Equity Bank Tanzania — account name is personal (individual, not company)
+Invoices: handwritten, no VAT number, no letterhead
+Services described: "Consultancy and advisory services" — no scope of work
+Contracts: None on file
+
+VENDOR PROFILE — Vendor Y (referred to as "Global Consulting Ltd")
+TIN: Valid ✓
+BRELA: Registered Feb-2025 (3 months before first invoice Mar-2025)
+Director: Name partially matches a related party of Approver A (different spelling)
+Address: PO Box 4421, Dar es Salaam — SAME BOX as Vendor X
+Bank: CRDB Bank Tanzania — company account ✓
+Invoices: Professional format, no deliverables documented
+Services: "Strategic business development advisory"
+
+PAYMENT PATTERNS
+Vendor X: 3 payments × TZS 22,000,000 = TZS 66,000,000
+  - All paid within 3 days of invoice (standard: 30 days)
+  - All approved same day as invoice date
+  - Monthly cadence: Jan-22, Feb-14, Mar-09
+
+Vendor Y: 2 payments × TZS 45,000,000 = TZS 90,000,000
+  - Paid within 5 days
+  - Board resolution for >TZS 20M: NOT obtained (policy requires CFO + CEO dual sign-off)
+  - CFO was on annual leave on both approval dates
+
+STAFF EXPENSE POOL (TXN027)
+Amount: TZS 9,800,000
+Description: "Staff Expenses Q1 2026 Pool"
+Breakdown: None provided
+Receipts: None attached
+Approver: Approver A (single signatory)
+Posting: Single lump-sum journal entry — not itemised
+
+BENFORD ANALYSIS (first digits of consultancy payments)
+Payments: 22,000,000 × 3 | 45,000,000 × 2 | 9,800,000 × 1
+First digits: 2,2,2,4,4,9 — concentrated on 2 and 4
+Expected Benford distribution: digit 1 should appear 30.1%, digit 2 = 17.6%, digit 4 = 9.7%
+Observed: digit 2 = 50%, digit 4 = 33%, digit 9 = 17%
+Note: small dataset — flag as indicative, not conclusive
+
+REQUEST: Perform forensic procurement fraud investigation.
+Apply Benford's Law analysis. Assess vendor legitimacy red flags.
+Trace payment flows. Flag mandatory reporting obligations (PCCB/AMLA).
+Do NOT name any individuals — use anonymised references only.
+Frame all findings factually: "indicators suggest", not "X committed fraud".

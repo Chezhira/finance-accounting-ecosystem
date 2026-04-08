@@ -1,0 +1,57 @@
+[
+  {
+    "agent": "FPAAnalyst",
+    "status": "PARTIAL",
+    "elapsed": 146.2170798778534
+  },
+  {
+    "agent": "FPAAnalyst",
+    "status": "PASS",
+    "elapsed": 108.41031289100647
+  },
+  {
+    "agent": "FPAManager",
+    "status": "PASS",
+    "elapsed": 119.37380862236023
+  },
+  {
+    "agent": "FPAManager",
+    "status": "PASS",
+    "elapsed": 70.28630352020264
+  },
+  {
+    "agent": "SeniorFPAManager",
+    "status": "PASS",
+    "elapsed": 101.883052110672
+  },
+  {
+    "agent": "VPFinance",
+    "status": "PASS",
+    "elapsed": 90.34106302261353
+  },
+  {
+    "agent": "DataAnalyst",
+    "status": "PASS",
+    "elapsed": 114.19057750701904
+  },
+  {
+    "agent": "ComplianceAuditor",
+    "status": "PARTIAL",
+    "elapsed": 159.78183770179749
+  },
+  {
+    "agent": "AuditManager",
+    "status": "PARTIAL",
+    "elapsed": 169.45627689361572
+  },
+  {
+    "agent": "QAAuditor",
+    "status": "PARTIAL",
+    "elapsed": 166.76682329177856
+  },
+  {
+    "agent": "ForensicAuditor",
+    "status": "PARTIAL",
+    "elapsed": 151.212988615036
+  }
+]

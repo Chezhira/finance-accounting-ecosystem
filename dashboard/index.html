@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FinOps Ecosystem v5.1.0</title>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--card:#22263a;--border:#2e3350;--accent:#6c63ff;--accent2:#00d4aa;--accent3:#ff6b6b;--accent4:#ffd166;--text:#e8eaf0;--muted:#8890b0;--success:#00d4aa;--warning:#ffd166;--danger:#ff6b6b;--info:#64b5f6;--radius:10px;--font:'Inter',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:18px;font-weight:700;color:var(--accent)}
+.logo span{color:var(--accent2);font-size:12px;margin-left:8px;font-weight:400}
+.header-right{display:flex;align-items:center;gap:12px}
+.version-badge{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--muted)}
+.market-badge{background:#1a2e1a;border:1px solid #2e5e2e;border-radius:20px;padding:3px 10px;font-size:11px;color:var(--success);cursor:pointer}
+.market-badge.stale{background:#2e2a1a;border-color:#5e4e2e;color:var(--warning)}
+
+/* Tabs */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto;white-space:nowrap}
+.tab{display:inline-block;padding:12px 16px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none;padding:20px;max-width:1400px;margin:0 auto}
+.tab-content.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* Forms */
+select,input,textarea{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 10px;font-size:13px;width:100%;font-family:var(--font)}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;min-height:120px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.form-group{margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5a52e0}
+.btn-success{background:var(--success);color:#000}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#000}
+.btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-success{background:#0d2e22;color:var(--success)}
+.badge-warning{background:#2e2a0d;color:var(--warning)}
+.badge-danger{background:#2e0d0d;color:var(--danger)}
+.badge-info{background:#0d1e2e;color:var(--info)}
+.badge-muted{background:var(--surface);color:var(--muted)}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;background:var(--surface);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(108,99,255,.05)}
+
+/* Severity */
+.sev-critical{color:var(--danger);font-weight:700}
+.sev-high{color:#ff9a3c;font-weight:600}
+.sev-medium{color:var(--warning)}
+.sev-info{color:var(--info)}
+
+/* Result panels */
+.result-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:12px}
+.result-section{margin-bottom:16px}
+.result-section-title{font-size:12px;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.kv:last-child{border-bottom:none}
+.kv-key{color:var(--muted);font-size:12px}
+.kv-val{color:var(--text);font-weight:500;font-size:12px}
+pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:11px;color:#a8b5d0;max-height:400px;white-space:pre-wrap;word-break:break-all}
+
+/* Spinner */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(108,99,255,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Alert */
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.alert-danger{background:#2e0d0d;border:1px solid var(--danger);color:#ff9a9a}
+.alert-success{background:#0d2e22;border:1px solid var(--success);color:#7effd4}
+.alert-warning{background:#2e2a0d;border:1px solid var(--warning);color:#ffe08a}
+.alert-info{background:#0d1e2e;border:1px solid var(--info);color:#90caf9}
+
+/* Stats bar */
+.stat-bar{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.stat-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;min-width:100px}
+.stat-val{font-size:22px;font-weight:700;color:var(--accent)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Journal entries */
+.je-entry{font-size:12px;display:flex;justify-content:space-between;padding:4px 0}
+.je-debit{color:var(--info)}
+.je-credit{color:var(--success)}
+
+/* Close checklist */
+.checklist-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.checklist-status{width:80px;text-align:center}
+
+/* Market data */
+.rate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.rate-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+.rate-name{font-size:11px;color:var(--muted);margin-bottom:4px}
+.rate-val{font-size:18px;font-weight:700;color:var(--accent2)}
+.rate-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Scrollable */
+.scroll-x{overflow-x:auto}
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">FinOps Ecosystem <span>v5.1.0 · Session 10</span></div>
+  <div class="header-right">
+    <span class="market-badge" id="marketBadge" onclick="showTab('market')">● Market Rates</span>
+    <span class="version-badge">Python · FastAPI · Claude API</span>
+    <select id="globalTenant" style="width:180px" onchange="onTenantChange()">
+      <option value="">Select Tenant…</option>
+    </select>
+  </div>
+</header>
+
+<nav>
+  <span class="tab active" onclick="showTab('queue')">📋 Queue</span>
+  <span class="tab" onclick="showTab('acct_specialist')">🏭 Acct Specialists</span>
+  <span class="tab" onclick="showTab('tax')">🧾 Tax</span>
+  <span class="tab" onclick="showTab('fpa')">📊 FP&A</span>
+  <span class="tab" onclick="showTab('audit')">🔍 Audit</span>
+  <span class="tab" onclick="showTab('treasury')">💰 Treasury</span>
+  <span class="tab" onclick="showTab('corpfin')">🏦 Corp Finance</span>
+  <span class="tab" onclick="showTab('universal')">🌐 Universal</span>
+  <span class="tab" onclick="showTab('escalations')">⛓ Escalations</span>
+  <span class="tab" onclick="showTab('market')">📈 Market</span>
+  <span class="tab" onclick="showTab('reports')">📄 Reports</span>
+  <span class="tab" onclick="showTab('tenants')">🏢 Tenants</span>
+</nav>
+
+<!-- ============================= QUEUE ============================= -->
+<div class="tab-content active" id="tab-queue">
+  <div id="statsBar" class="stat-bar"></div>
+  <div class="card">
+    <div class="card-title">Ingest New Data</div>
+    <div class="form-row">
+      <div>
+        <label>Jurisdiction</label>
+        <select id="ingestJur"><option value="TZ">Tanzania (IFRS)</option><option value="US">United States (GAAP)</option></select>
+      </div>
+      <div>
+        <label>Source</label>
+        <select id="ingestSrc"><option value="manual">Manual Entry</option><option value="email">Email Paste</option><option value="webhook">Webhook</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Raw Data</label>
+      <textarea id="ingestText" placeholder="Paste invoice, transaction, email, or any raw financial data…"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="ingestText()"><span id="ingestSpinner"></span>Process via Junior Accountant</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Upload File</div>
+    <input type="file" id="uploadFile" accept=".pdf,.csv,.xlsx,.json,.txt" style="margin-bottom:10px"/>
+    <button class="btn btn-ghost btn-sm" onclick="uploadFile()">Upload & Process</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Suggestions Queue</div>
+    <div id="suggestionsList"><div class="empty-state">Select a tenant to load suggestions</div></div>
+  </div>
+</div>
+
+<!-- ============================= ACCOUNTING SPECIALISTS ============================= -->
+<div class="tab-content" id="tab-acct_specialist">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Accounting Specialists</div>
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="acctAgent" onchange="updateAcctAnalysisTypes()">
+            <option value="cost_accountant">💰 Cost Accountant</option>
+            <option value="revenue_accountant">📈 Revenue Accountant</option>
+            <option value="accounting_manager">🗂 Accounting Manager</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Analysis Type</label>
+          <select id="acctAnalysisType"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Period</label>
+            <input id="acctPeriod" placeholder="e.g. Q1 2025"/>
+          </div>
+          <div class="form-group">
+            <label>Jurisdiction</label>
+            <select id="acctJur">
+              <option value="TZ">Tanzania (IFRS)</option>
+              <option value="US">United States (GAAP)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Raw Data / Context</label>
+          <textarea id="acctData" placeholder="Paste cost data, BOM, contract details, GL export, trial balance, invoices…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Additional Context (optional)</label>
+          <input id="acctContext" placeholder="Operator notes, assumptions, prior period context…"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0">
+            <input type="checkbox" id="acctResearch"/> Enable Online Research
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0">
+            <input type="checkbox" id="acctMarketData"/> Include Live Market Data (FX rates)
+          </label>
+        </div>
+        <button class="btn btn-primary" onclick="runAcctSpecialist()"><span id="acctSpinner"></span>Run Analysis</button>
+      </div>
+      <!-- Agent info card -->
+      <div class="card" id="acctAgentInfo">
+        <div class="card-title">Agent Capabilities</div>
+        <div id="acctAgentInfoContent"></div>
+      </div>
+    </div>
+    <div>
+      <div id="acctResultPanel" class="result-panel" style="display:none">
+        <div id="acctEscBanner" style="display:none"></div>
+        <div id="acctResult"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= TAX ============================= -->
+<div class="tab-content" id="tab-tax">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Tax Analysis</div>
+        <div class="form-group">
+          <label>Jurisdiction</label>
+          <select id="taxJur"><option value="TZ">Tanzania (TRA / IFRS)</option><option value="US">United States (IRS / GAAP)</option></select>
+        </div>
+        <div class="form-group">
+          <label>Period</label>
+          <input id="taxPeriod" placeholder="e.g. Q1 2025"/>
+        </div>
+        <div class="form-group">
+          <label>Raw Data</label>
+          <textarea id="taxData" placeholder="Paste invoices, financial data, payroll…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Extra Context</label>
+          <input id="taxContext" placeholder="Optional notes…"/>
+        </div>
+        <button class="btn btn-primary" onclick="runTax()"><span id="taxSpinner"></span>Analyse Tax</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick Calculators</div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">TZ — VAT Return</div>
+          <div class="form-row" style="margin-bottom:8px">
+            <div><label>Taxable Sales (TZS)</label><input id="vatSales" type="number" placeholder="0"/></div>
+            <div><label>Input VAT (TZS)</label><input id="vatInput" type="number" placeholder="0"/></div>
+          </div>
+          <div class="form-group"><label>Period</label><input id="vatPeriod" placeholder="March 2025"/></div>
+          <button class="btn btn-ghost btn-sm" onclick="calcVAT()">Calculate</button>
+          <div id="vatResult" style="margin-top:8px"></div>
+        </div>
+        <hr style="border-color:var(--border);margin:12px 0"/>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">US — SE Tax</div>
+          <div class="form-group"><label>Net LLC Income (USD)</label><input id="seIncome" type="number" placeholder="0"/></div>
+          <div class="form-group"><label>Period</label><input id="sePeriod" placeholder="2025"/></div>
+          <button class="btn btn-ghost btn-sm" onclick="calcSETax()">Calculate</button>
+          <div id="seResult" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div id="taxResultPanel" class="result-panel" style="display:none">
+        <div id="taxResult"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= FP&A ============================= -->
+<div class="tab-content" id="tab-fpa">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">FP&A Analysis</div>
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="fpaAgent" onchange="updateFPATypes()">
+            <option value="fpa_analyst">FP&A Analyst</option>
+            <option value="fpa_manager">FP&A Manager</option>
+            <option value="senior_fpa_manager">Senior FP&A Manager</option>
+            <option value="vp_finance">VP of Finance</option>
+            <option value="data_analyst">Data Analyst</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Analysis Type</label><select id="fpaType"></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Period</label><input id="fpaPeriod" placeholder="Q1 2025"/></div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="fpaJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Raw Data</label><textarea id="fpaData" placeholder="Financial data, variance reports, budget vs actual…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="fpaContext" placeholder="Optional notes…"/></div>
+        <button class="btn btn-primary" onclick="runFPA()"><span id="fpaSpinner"></span>Run FP&A</button>
+      </div>
+    </div>
+    <div>
+      <div id="fpaResultPanel" class="result-panel" style="display:none"><div id="fpaResult"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= AUDIT ============================= -->
+<div class="tab-content" id="tab-audit">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Audit Analysis</div>
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="auditAgent" onchange="updateAuditTypes()">
+            <option value="compliance_auditor">Compliance Auditor</option>
+            <option value="audit_manager">Audit Manager</option>
+            <option value="qa_auditor">QA Auditor</option>
+            <option value="forensic_auditor">🔴 Forensic Auditor</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Scope</label><select id="auditScope"></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Audit Period</label><input id="auditPeriod" placeholder="Q1 2025"/></div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="auditJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Raw Data</label><textarea id="auditData" placeholder="GL data, transactions, controls documentation…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="auditContext" placeholder="Scope limitations, known issues…"/></div>
+        <button class="btn btn-primary" onclick="runAudit()"><span id="auditSpinner"></span>Run Audit</button>
+      </div>
+      <div class="alert alert-warning" style="font-size:12px">
+        ⚠️ Forensic Auditor may flag SAR/STR requirements. All reporting decisions rest with the human operator.
+      </div>
+    </div>
+    <div>
+      <div id="sarBanner" class="alert alert-danger" style="display:none">
+        🚨 SAR/STR REQUIRED — Forensic Auditor has flagged mandatory suspicious activity reporting. Review immediately.
+      </div>
+      <div id="auditResultPanel" class="result-panel" style="display:none"><div id="auditResult"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= TREASURY ============================= -->
+<div class="tab-content" id="tab-treasury">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Treasury Analysis</div>
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="treasAgent" onchange="updateTreasTypes()">
+            <option value="cash_flow">Cash Flow Analyst</option>
+            <option value="liquidity">Liquidity Manager</option>
+            <option value="investment">Investment Strategist</option>
+            <option value="treasury">Treasury Manager</option>
+            <option value="capital_markets">Capital Markets Analyst</option>
+            <option value="hedge_fund">Hedge Fund Manager</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Analysis Type</label><select id="treasType"></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Period</label><input id="treasPeriod" placeholder="Q1 2025"/></div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="treasJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Raw Data</label><textarea id="treasData" placeholder="Cash positions, bank statements, investment portfolio…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="treasContext" placeholder="Optional notes…"/></div>
+        <button class="btn btn-primary" onclick="runTreasury()"><span id="treasSpinner"></span>Run Treasury</button>
+      </div>
+    </div>
+    <div>
+      <div id="treasResultPanel" class="result-panel" style="display:none"><div id="treasResult"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= CORP FINANCE ============================= -->
+<div class="tab-content" id="tab-corpfin">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Corporate Finance Analysis</div>
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="corpAgent" onchange="updateCorpTypes()">
+            <option value="investment_banker">Investment Banker</option>
+            <option value="vp_capital_markets">VP Capital Markets</option>
+            <option value="valuations">Valuations Analyst</option>
+            <option value="capital_budgeting">Capital Budgeting Manager</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Analysis Type</label><select id="corpType"></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Period</label><input id="corpPeriod" placeholder="Q1 2025"/></div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="corpJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Raw Data</label><textarea id="corpData" placeholder="Financial statements, deal terms, market comparables…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="corpContext" placeholder="Optional notes…"/></div>
+        <button class="btn btn-primary" onclick="runCorpFin()"><span id="corpSpinner"></span>Run Analysis</button>
+      </div>
+    </div>
+    <div>
+      <div id="corpResultPanel" class="result-panel" style="display:none"><div id="corpResult"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= UNIVERSAL ============================= -->
+<div class="tab-content" id="tab-universal">
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Universal Routing (Phase4Orchestrator)</div>
+        <div class="alert alert-info" style="font-size:12px;margin-bottom:12px">
+          Paste anything — L1 classifies department, L2 selects agent + analysis type automatically.
+        </div>
+        <div class="form-group"><label>Raw Data</label><textarea id="univData" placeholder="Paste any financial data — invoice, budget, audit finding, cash flow…" style="min-height:160px"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Period (optional)</label><input id="univPeriod" placeholder="Q1 2025"/></div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="univJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
+          </div>
+        </div>
+        <details style="margin-bottom:12px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--muted)">Force overrides (optional)</summary>
+          <div style="margin-top:8px" class="form-row-3">
+            <div><label>Department</label><input id="univDept" placeholder="fpa / audit / treasury…"/></div>
+            <div><label>Agent Type</label><input id="univAgent" placeholder="fpa_analyst…"/></div>
+            <div><label>Analysis Type</label><input id="univAType" placeholder="variance…"/></div>
+          </div>
+        </details>
+        <button class="btn btn-primary" onclick="runUniversal()"><span id="univSpinner"></span>Auto-Route &amp; Analyse</button>
+      </div>
+    </div>
+    <div>
+      <div id="univRoutingLog" class="result-panel" style="display:none"></div>
+      <div id="univResultPanel" class="result-panel" style="display:none;margin-top:12px"><div id="univResult"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= ESCALATIONS ============================= -->
+<div class="tab-content" id="tab-escalations">
+  <div style="display:flex;gap:10px;margin-bottom:16px">
+    <button class="btn btn-ghost btn-sm" onclick="loadEscalations('all')">All</button>
+    <button class="btn btn-warning btn-sm" onclick="loadEscalations('pending')">⏳ Pending Human</button>
+    <button class="btn btn-danger btn-sm" onclick="loadEscalations('rejected')">❌ Rejected</button>
+  </div>
+  <div id="escalationsList"><div class="empty-state">Click a filter above to load escalations</div></div>
+</div>
+
+<!-- ============================= MARKET RATES ============================= -->
+<div class="tab-content" id="tab-market">
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <button class="btn btn-primary btn-sm" onclick="loadMarketRates()">🔄 Refresh Rates</button>
+    <span id="marketTimestamp" style="font-size:12px;color:var(--muted)"></span>
+    <span id="marketSource" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+  <div id="marketWarnings"></div>
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">FX Rates</div>
+        <div id="fxRatesGrid" class="rate-grid"><div class="empty-state">Click Refresh Rates</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Single FX Lookup</div>
+        <div class="form-row" style="align-items:flex-end">
+          <div><label>From</label><input id="fxFrom" placeholder="USD" style="text-transform:uppercase"/></div>
+          <div><label>To</label><input id="fxTo" placeholder="TZS" style="text-transform:uppercase"/></div>
+          <div><button class="btn btn-ghost btn-sm" onclick="lookupFX()" style="margin-top:20px">Look Up</button></div>
+        </div>
+        <div id="fxLookupResult" style="margin-top:10px;font-size:13px"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">US Interest Rates (FRED)</div>
+        <div id="usRatesGrid" class="rate-grid"><div class="empty-state">Click Refresh Rates</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tanzania Rates (BoT Cached)</div>
+        <div id="tzRatesGrid" class="rate-grid"><div class="empty-state">Click Refresh Rates</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= REPORTS ============================= -->
+<div class="tab-content" id="tab-reports">
+  <div class="card">
+    <div class="card-title">Generated Reports</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadReports()" style="margin-bottom:12px">🔄 Refresh</button>
+    <div id="reportsList"><div class="empty-state">Click Refresh to load reports</div></div>
+  </div>
+</div>
+
+<!-- ============================= TENANTS ============================= -->
+<div class="tab-content" id="tab-tenants">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Create Tenant</div>
+      <div class="form-row">
+        <div class="form-group"><label>ID (slug)</label><input id="tId" placeholder="acme-tz"/></div>
+        <div class="form-group"><label>Display Name</label><input id="tName" placeholder="Acme Tanzania Ltd"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Jurisdiction</label>
+          <select id="tJur"><option value="TZ">Tanzania (IFRS)</option><option value="US">United States (GAAP)</option></select>
+        </div>
+        <div class="form-group"><label>Currency</label>
+          <select id="tCurrency"><option value="TZS">TZS</option><option value="USD">USD</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Accounting Standard</label>
+          <select id="tStd"><option value="IFRS">IFRS</option><option value="US GAAP">US GAAP</option></select>
+        </div>
+        <div class="form-group"><label>Country</label><input id="tCountry" placeholder="Tanzania"/></div>
+      </div>
+      <div class="form-group"><label>Notes</label><input id="tNotes" placeholder="Optional notes…"/></div>
+      <button class="btn btn-primary" onclick="createTenant()">Create Tenant</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Existing Tenants</div>
+      <div id="tenantsList"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let tenants = [];
+let allAgentDefs = {};
+
+// ───────────────────────── Tabs ─────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  const tabEl = document.querySelector(`[onclick="showTab('${id}')"]`);
+  if(tabEl) tabEl.classList.add('active');
+  const content = document.getElementById(`tab-${id}`);
+  if(content) content.classList.add('active');
+  if(id==='queue') loadQueue();
+  if(id==='escalations') loadEscalations('all');
+  if(id==='reports') loadReports();
+  if(id==='tenants') loadTenants();
+  if(id==='market') loadMarketRates();
+  if(id==='acct_specialist') updateAcctAnalysisTypes();
+  if(id==='fpa') updateFPATypes();
+  if(id==='audit') updateAuditTypes();
+  if(id==='treasury') updateTreasTypes();
+  if(id==='corpfin') updateCorpTypes();
+}
+
+// ───────────────────────── Helpers ─────────────────────────
+const get = url => fetch(API+url).then(r=>r.json());
+const post = (url,body) => fetch(API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
+
+function spin(id,on){const el=document.getElementById(id);if(el)el.innerHTML=on?'<span class="spinner"></span>':'';}
+function sev(s){return `<span class="sev-${(s||'info').toLowerCase()}">${s||''}</span>`;}
+function badge(s){
+  const map={PENDING_HUMAN:'warning',POSTED:'success',HUMAN_REJECTED:'danger',FLAGGED_CRITICAL:'danger',MAX_RETRIES_EXCEEDED:'danger',ERROR:'danger',COMPLETE:'success',ESCALATED:'warning'};
+  const cls=map[s]||'muted';
+  return `<span class="badge badge-${cls}">${s||'PENDING'}</span>`;
+}
+function fmtNum(n){if(n===null||n===undefined)return '—';return Number(n).toLocaleString(undefined,{maximumFractionDigits:2});}
+function tenant(){return document.getElementById('globalTenant').value;}
+
+function showResult(panelId, innerHtml){
+  const panel = document.getElementById(panelId);
+  if(panel){ panel.style.display='block'; panel.innerHTML=innerHtml; }
+}
+
+function renderFlags(flags){
+  if(!flags||!flags.length) return '<div style="color:var(--muted);font-size:12px">No flags</div>';
+  return flags.slice(0,8).map(f=>`
+    <div style="padding:8px;margin-bottom:6px;background:var(--bg);border-radius:6px;border-left:3px solid ${f.severity==='CRITICAL'?'var(--danger)':f.severity==='HIGH'?'#ff9a3c':f.severity==='MEDIUM'?'var(--warning)':'var(--info)'}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        ${sev(f.severity)} <span style="font-size:11px;color:var(--muted)">${f.code||''}</span>
+      </div>
+      <div style="font-size:12px">${f.message||''}</div>
+      ${f.recommended_action?`<div style="font-size:11px;color:var(--muted);margin-top:4px">→ ${f.recommended_action}</div>`:''}
+    </div>`).join('');
+}
+
+function renderJEs(jes){
+  if(!jes||!jes.length) return '<div style="color:var(--muted);font-size:12px">No journal entries suggested</div>';
+  return jes.slice(0,5).map(je=>`
+    <div style="background:var(--bg);border-radius:6px;padding:10px;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--accent2)">${je.description||'Journal Entry'}</div>
+      ${(je.entries||[]).map(e=>`
+        <div class="je-entry">
+          <span>${e.account}</span>
+          <span>${e.debit?`<span class="je-debit">DR ${fmtNum(e.debit)} ${e.currency_code||''}</span>`:''}${e.credit?`<span class="je-credit">  CR ${fmtNum(e.credit)} ${e.currency_code||''}</span>`:''}</span>
+        </div>`).join('')}
+      <div style="font-size:11px;margin-top:6px;color:${je.balanced?'var(--success)':'var(--danger)'}">
+        ${je.balanced?'✓ Balanced':'✗ NOT BALANCED'}
+        — DR ${fmtNum(je.total_debit)} | CR ${fmtNum(je.total_credit)}
+      </div>
+    </div>`).join('');
+}
+
+function renderRecs(recs){
+  if(!recs||!recs.length) return '';
+  return `<ul style="padding-left:16px;font-size:12px;color:var(--text)">${recs.map(r=>`<li style="margin-bottom:4px">${r}</li>`).join('')}</ul>`;
+}
+
+// ───────────────────────── Tenants ─────────────────────────
+async function loadTenants(){
+  const data = await get('/tenants');
+  tenants = data.tenants||[];
+  const sel = document.getElementById('globalTenant');
+  const cur = sel.value;
+  sel.innerHTML='<option value="">Select Tenant…</option>'+tenants.map(t=>`<option value="${t.id}">${t.display_name||t.id}</option>`).join('');
+  if(cur) sel.value=cur;
+  document.getElementById('tenantsList').innerHTML = tenants.length
+    ? `<table><thead><tr><th>ID</th><th>Name</th><th>Jurisdiction</th><th>Standard</th><th></th></tr></thead><tbody>
+        ${tenants.map(t=>`<tr><td><code>${t.id}</code></td><td>${t.display_name||'—'}</td><td>${t.jurisdiction}</td><td>${t.accounting_standard}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteTenant('${t.id}')">Delete</button></td></tr>`).join('')}
+       </tbody></table>`
+    : '<div class="empty-state">No tenants yet</div>';
+}
+
+async function createTenant(){
+  await post('/tenants',{
+    id:document.getElementById('tId').value,
+    display_name:document.getElementById('tName').value,
+    jurisdiction:document.getElementById('tJur').value,
+    accounting_standard:document.getElementById('tStd').value,
+    country:document.getElementById('tCountry').value,
+    currency:document.getElementById('tCurrency').value,
+    notes:document.getElementById('tNotes').value
+  });
+  loadTenants();
+}
+
+async function deleteTenant(id){
+  if(!confirm(`Delete tenant ${id}?`)) return;
+  await fetch(API+`/tenants/${id}`,{method:'DELETE'});
+  loadTenants();
+}
+
+function onTenantChange(){ loadQueue(); loadStats(); }
+
+// ───────────────────────── Stats ─────────────────────────
+async function loadStats(){
+  const t=tenant(); if(!t) return;
+  const data = await get(`/stats/${t}`);
+  const s = data.stats||{};
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-item"><div class="stat-val">${s.total||0}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-item"><div class="stat-val" style="color:var(--warning)">${s.pending||0}</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat-item"><div class="stat-val" style="color:var(--success)">${s.approved||0}</div><div class="stat-lbl">Approved</div></div>
+    <div class="stat-item"><div class="stat-val" style="color:var(--danger)">${s.rejected||0}</div><div class="stat-lbl">Rejected</div></div>
+    <div class="stat-item"><div class="stat-val" style="color:var(--info)">${s.escalated||0}</div><div class="stat-lbl">Escalated</div></div>`;
+}
+
+// ───────────────────────── Queue ─────────────────────────
+async function loadQueue(){
+  const t=tenant(); if(!t){document.getElementById('suggestionsList').innerHTML='<div class="empty-state">Select a tenant above</div>';return;}
+  loadStats();
+  const data = await get(`/suggestions/${t}`);
+  const suggs = data.suggestions||[];
+  if(!suggs.length){document.getElementById('suggestionsList').innerHTML='<div class="empty-state">No suggestions yet</div>';return;}
+  document.getElementById('suggestionsList').innerHTML = `<table><thead><tr><th>ID</th><th>Summary</th><th>Vendor / Type</th><th>Amount</th><th>Jurisdiction</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+    ${suggs.slice(0,50).map(s=>{
+      // Dig into suggestion_json for rich display
+      let sj={};
+      try{
+        const raw=typeof s.suggestion_json==='string'?JSON.parse(s.suggestion_json):s.suggestion_json;
+        sj=raw||{};
+      }catch(ex){}
+      const doc=sj.document_analysis||{};
+      const pf=doc.parsed_fields||{};
+      const je=sj.journal_entry||{};
+      const summary=sj.reasoning?(sj.reasoning.split('STEP')[0]||'').slice(0,80):
+                    doc.document_type?`${doc.document_type} — ${doc.source||''}`:
+                    s.summary||s.description||'—';
+      const vendor=pf.vendor_name||pf.customer_name||sj.agent||'—';
+      const amount=je.entries?(je.totals?.total_debit||'—'):'—';
+      const currency=je.currency||s.currency||'';
+      const flags=sj.flags||[];
+      const hasCritical=flags.some(f=>(f.severity||'').toLowerCase()==='critical');
+      return `<tr style="${hasCritical?'border-left:3px solid var(--danger)':''}">
+        <td><code style="font-size:11px">${(s.id||'').slice(0,8)}</code></td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${summary}">${summary}</td>
+        <td style="font-size:12px;color:var(--accent2)">${vendor}</td>
+        <td style="font-size:12px">${amount!=='—'?fmtNum(amount)+' '+currency:'—'}</td>
+        <td>${s.jurisdiction||'—'}</td>
+        <td>${badge(s.status)}</td>
+        <td style="font-size:11px;color:var(--muted)">${(s.created_at||'').slice(0,16)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="expandSuggestion('${s.id}',this)" style="margin-right:4px">👁</button>
+          <button class="btn btn-success btn-sm" onclick="decide('${s.id}','APPROVED')">✓</button>
+          <button class="btn btn-danger btn-sm" onclick="decide('${s.id}','REJECTED')">✗</button>
+          <button class="btn btn-warning btn-sm" onclick="decide('${s.id}','ESCALATE')">↑</button>
+        </td>
+      </tr>
+      <tr id="expand_${s.id}" style="display:none"><td colspan="8" style="padding:0 12px 12px;background:var(--bg)">
+        <div style="padding:12px;border-radius:8px;border:1px solid var(--border)">
+          ${hasCritical?`<div class="alert alert-danger" style="margin-bottom:8px;font-size:12px">⚠️ CRITICAL flags detected</div>`:''}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px">
+            <div>
+              <div style="font-weight:600;color:var(--muted);margin-bottom:6px">DOCUMENT</div>
+              ${pf.vendor_name?`<div class="kv"><span class="kv-key">Vendor</span><span class="kv-val">${pf.vendor_name}</span></div>`:''}
+              ${pf.invoice_number?`<div class="kv"><span class="kv-key">Invoice #</span><span class="kv-val">${pf.invoice_number}</span></div>`:''}
+              ${pf.invoice_date?`<div class="kv"><span class="kv-key">Date</span><span class="kv-val">${pf.invoice_date}</span></div>`:''}
+              ${pf.total_usd!==undefined?`<div class="kv"><span class="kv-key">Amount</span><span class="kv-val">USD ${fmtNum(pf.total_usd)}</span></div>`:''}
+              ${sj.classification?.account_name?`<div class="kv"><span class="kv-key">Account</span><span class="kv-val">${sj.classification.account_code} — ${sj.classification.account_name}</span></div>`:''}
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--muted);margin-bottom:6px">JOURNAL ENTRY</div>
+              ${(je.entries||[]).map(e=>`<div class="je-entry">
+                <span style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${e.account||''}</span>
+                <span>${e.debit?`<span class="je-debit">DR ${fmtNum(e.debit)}</span>`:''}${e.credit?`<span class="je-credit"> CR ${fmtNum(e.credit)}</span>`:''}</span>
+              </div>`).join('')}
+              ${je.totals?`<div style="margin-top:6px;font-size:11px;color:${je.totals.balanced?'var(--success)':'var(--danger)'}">
+                ${je.totals.balanced?'✓ Balanced':'✗ NOT BALANCED'} — DR ${fmtNum(je.totals.total_debit)} | CR ${fmtNum(je.totals.total_credit)}
+              </div>`:''}
+            </div>
+          </div>
+          ${flags.length?`<div style="margin-top:10px"><div style="font-weight:600;color:var(--muted);font-size:11px;margin-bottom:6px">FLAGS</div>
+            ${flags.slice(0,5).map(f=>`<div style="font-size:11px;margin-bottom:4px">${sev(f.severity)} ${f.message||''}</div>`).join('')}
+          </div>`:''}
+          ${sj.next_action?`<div style="margin-top:10px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">${sj.next_action}</div>`:''}
+        </div>
+      </td></tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+async function decide(id, decision){
+  const t=tenant(); if(!t) return alert('Select a tenant first');
+  await post(`/suggestions/${t}/${id}/decide`,{decision,decided_by:'operator',notes:''});
+  loadQueue();
+}
+
+function expandSuggestion(id, btn){
+  const row=document.getElementById('expand_'+id);
+  if(!row) return;
+  const visible=row.style.display!=='none';
+  row.style.display=visible?'none':'table-row';
+  btn.textContent=visible?'👁':'🔼';
+}
+
+// ───────────────────────── Ingest ─────────────────────────
+async function ingestText(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  const raw=document.getElementById('ingestText').value; if(!raw.trim()) return;
+  spin('ingestSpinner',true);
+  const r = await post('/ingest/text',{raw_text:raw,tenant_id:t,jurisdiction:document.getElementById('ingestJur').value,source:document.getElementById('ingestSrc').value});
+  spin('ingestSpinner',false);
+  document.getElementById('ingestText').value='';
+  loadQueue();
+}
+
+async function uploadFile(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  const file=document.getElementById('uploadFile').files[0]; if(!file) return;
+  const fd=new FormData(); fd.append('file',file); fd.append('tenant_id',t); fd.append('jurisdiction',document.getElementById('ingestJur').value||'TZ');
+  await fetch(API+'/ingest/upload',{method:'POST',body:fd});
+  loadQueue();
+}
+
+// ───────────────────────── ACCOUNTING SPECIALISTS ─────────────────────────
+const ACCT_TYPES = {
+  cost_accountant: ['job_costing','standard_costing','variance_analysis','overhead_absorption','bom_costing','abc_costing','process_costing','inventory_valuation','cogs_analysis','margin_analysis','adhoc'],
+  revenue_accountant: ['revenue_recognition','contract_analysis','deferred_revenue','unbilled_revenue','multi_element','variable_consideration','percentage_completion','licensing_royalties','revenue_reconciliation','contract_modifications','adhoc'],
+  accounting_manager: ['month_end_close','gl_review','intercompany_elimination','bs_reconciliation','management_accounts','chart_of_accounts','audit_readiness','policy_review','close_checklist','journal_review','adhoc']
+};
+
+const ACCT_INFO = {
+  cost_accountant: {quals:['CIMA','CPA','ACCA','CMA'],desc:'Job costing, standard vs actual, overhead absorption, variance analysis, BOM, ABC, process costing, inventory valuation (IAS 2 / ASC 330)'},
+  revenue_accountant: {quals:['ACCA','CPA','CIMA','CFA Level II'],desc:'5-step revenue model (IFRS 15 / ASC 606), contract assets/liabilities, deferred revenue, unbilled revenue, multi-element, variable consideration'},
+  accounting_manager: {quals:['CPA','ACCA','CIMA','CA'],desc:'Month-end close coordination, GL review, intercompany elimination, BS reconciliations, management accounts, audit readiness'}
+};
+
+function updateAcctAnalysisTypes(){
+  const agent=document.getElementById('acctAgent').value;
+  const types=ACCT_TYPES[agent]||['adhoc'];
+  document.getElementById('acctAnalysisType').innerHTML=types.map(t=>`<option value="${t}">${t.replace(/_/g,' ')}</option>`).join('');
+  const info=ACCT_INFO[agent]||{};
+  document.getElementById('acctAgentInfoContent').innerHTML=`
+    <div class="kv"><span class="kv-key">Qualifications</span><span class="kv-val">${(info.quals||[]).join(' · ')}</span></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">${info.desc||''}</div>`;
+}
+
+async function runAcctSpecialist(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('acctSpinner',true);
+  document.getElementById('acctResultPanel').style.display='none';
+  const body={
+    raw_data:document.getElementById('acctData').value,
+    tenant_id:t,
+    period:document.getElementById('acctPeriod').value,
+    jurisdiction:document.getElementById('acctJur').value,
+    agent_type:document.getElementById('acctAgent').value,
+    analysis_type:document.getElementById('acctAnalysisType').value,
+    extra_context:document.getElementById('acctContext').value,
+    enable_research:document.getElementById('acctResearch').checked,
+    include_market_data:document.getElementById('acctMarketData').checked
+  };
+  const result = await post('/accounting/analyze',body);
+  spin('acctSpinner',false);
+  renderAcctResult(result);
+}
+
+function renderAcctResult(r){
+  const panel=document.getElementById('acctResultPanel');
+  const escBanner=document.getElementById('acctEscBanner');
+  panel.style.display='block';
+
+  // Escalation banner
+  if(r._escalation_notice){
+    escBanner.style.display='block';
+    escBanner.innerHTML=`<div class="alert alert-danger">${r._escalation_notice}</div>`;
+  } else { escBanner.style.display='none'; }
+
+  let html=`
+    <div class="result-section">
+      <div class="result-section-title">${r.agent||'Agent'} · ${r.period||''} · ${r.jurisdiction||''}</div>
+      <div style="font-size:13px;margin-bottom:8px">${r.executive_summary||r.error||'No summary'}</div>
+      ${r._meta?`<div style="font-size:11px;color:var(--muted)">Model: ${r._meta.model||''} · ${r._meta.elapsed_s||0}s · ${r._meta.analysis_type||''}</div>`:''}
+    </div>`;
+
+  // Cost-specific: variance analysis
+  if(r.variance_analysis && r.agent==='CostAccountant'){
+    const va=r.variance_analysis;
+    html+=`<div class="result-section"><div class="result-section-title">Variance Analysis</div>
+      <table><thead><tr><th>Variance</th><th>Amount</th><th>F/A</th><th>Explanation</th></tr></thead><tbody>
+      ${['material_price_variance','material_usage_variance','labour_rate_variance','labour_efficiency_variance','overhead_expenditure_variance','overhead_volume_variance'].filter(k=>va[k]).map(k=>{
+        const v=va[k];return `<tr><td>${k.replace(/_/g,' ')}</td><td>${fmtNum(v.amount)}</td>
+          <td style="color:${v.favourable?'var(--success)':'var(--danger)'}">${v.favourable?'F':'A'}</td>
+          <td style="font-size:11px">${v.explanation||''}</td></tr>`}).join('')}
+      </tbody></table>
+      ${va.total_variance?`<div style="margin-top:8px;font-size:13px">Total: <strong style="color:${va.total_variance.favourable?'var(--success)':'var(--danger)'}">${fmtNum(va.total_variance.amount)} ${va.total_variance.favourable?'(F)':'(A)'}</strong></div>`:''}
+    </div>`;
+  }
+
+  // Revenue-specific: 5-step
+  if(r.five_step_analysis && r.agent==='RevenueAccountant'){
+    const fa=r.five_step_analysis;
+    html+=`<div class="result-section"><div class="result-section-title">5-Step Revenue Recognition</div>
+      <div class="kv"><span class="kv-key">Step 1 — Contract Identified</span><span class="kv-val">${fa.step1_contract_identified?.conclusion||'—'}</span></div>
+      <div class="kv"><span class="kv-key">Performance Obligations</span><span class="kv-val">${(fa.step2_performance_obligations||[]).length}</span></div>
+      <div class="kv"><span class="kv-key">Transaction Price</span><span class="kv-val">${fmtNum(fa.step3_transaction_price?.total_transaction_price)} ${fa.step3_transaction_price?.currency||''}</span></div>
+      <div class="kv"><span class="kv-key">Revenue Recognised (Period)</span><span class="kv-val">${fmtNum(r.revenue_summary?.total_revenue_recognised)} ${fa.step3_transaction_price?.currency||''}</span></div>
+    </div>`;
+    if(r.contract_balances){
+      const cb=r.contract_balances;
+      html+=`<div class="result-section"><div class="result-section-title">Contract Balances</div>
+        <div class="kv"><span class="kv-key">Closing Deferred Revenue</span><span class="kv-val">${fmtNum(cb.closing_deferred_revenue)}</span></div>
+        <div class="kv"><span class="kv-key">Closing Contract Asset (Unbilled)</span><span class="kv-val">${fmtNum(cb.closing_contract_asset)}</span></div>
+      </div>`;
+    }
+  }
+
+  // Accounting Manager: close status
+  if(r.close_status && r.agent==='AccountingManager'){
+    const cs=r.close_status;
+    const statusColor={ON_TRACK:'var(--success)',AT_RISK:'var(--warning)',DELAYED:'var(--danger)',COMPLETE:'var(--info)'}[cs.overall_status]||'var(--muted)';
+    html+=`<div class="result-section"><div class="result-section-title">Close Status</div>
+      <div class="kv"><span class="kv-key">Status</span><span class="kv-val" style="color:${statusColor};font-weight:700">${cs.overall_status||'—'}</span></div>
+      <div class="kv"><span class="kv-key">Target</span><span class="kv-val">${cs.close_day_target||'—'}</span></div>
+      <div class="kv"><span class="kv-key">Est. Completion</span><span class="kv-val">${cs.estimated_completion||'—'}</span></div>
+      ${cs.blockers?.length?`<div style="margin-top:8px"><span class="kv-key">Blockers:</span> ${cs.blockers.map(b=>`<span class="badge badge-danger" style="margin:2px">${b}</span>`).join('')}</div>`:''}
+    </div>`;
+    if(r.management_accounts_summary){
+      const ma=r.management_accounts_summary;
+      html+=`<div class="result-section"><div class="result-section-title">Management Accounts Summary</div>
+        <div class="grid-2">
+          <div class="kv"><span class="kv-key">Revenue</span><span class="kv-val">${fmtNum(ma.revenue)} ${ma.currency||''}</span></div>
+          <div class="kv"><span class="kv-key">Gross Profit</span><span class="kv-val">${fmtNum(ma.gross_profit)} (${fmtNum(ma.gp_margin_pct)}%)</span></div>
+          <div class="kv"><span class="kv-key">EBITDA</span><span class="kv-val">${fmtNum(ma.ebitda)} (${fmtNum(ma.ebitda_margin_pct)}%)</span></div>
+          <div class="kv"><span class="kv-key">Net Profit</span><span class="kv-val">${fmtNum(ma.net_profit)}</span></div>
+        </div>
+      </div>`;
+    }
+  }
+
+  // Flags (all agents)
+  html+=`<div class="result-section"><div class="result-section-title">Flags</div>${renderFlags(r.flags)}</div>`;
+
+  // Journal entries
+  const jes=r.suggested_journal_entries||[];
+  if(jes.length) html+=`<div class="result-section"><div class="result-section-title">Suggested Journal Entries</div>${renderJEs(jes)}</div>`;
+
+  // Recommendations
+  if(r.recommendations?.length) html+=`<div class="result-section"><div class="result-section-title">Recommendations</div>${renderRecs(r.recommendations)}</div>`;
+
+  // Research notes
+  if(r.research_notes) html+=`<div class="result-section"><div class="result-section-title">Research Notes</div><div style="font-size:12px;color:var(--muted)">${r.research_notes}</div></div>`;
+
+  // Raw JSON toggle
+  html+=`<div class="result-section"><div class="result-section-title">Raw JSON <button class="btn btn-ghost btn-sm" onclick="toggleRaw('acctRaw')">Toggle</button></div>
+    <pre class="code" id="acctRaw" style="display:none">${JSON.stringify(r,null,2)}</pre></div>`;
+
+  document.getElementById('acctResult').innerHTML=html;
+}
+
+function toggleRaw(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+
+// ───────────────────────── TAX ─────────────────────────
+async function runTax(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('taxSpinner',true);
+  const r=await post('/tax/analyze',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,extra_context:document.getElementById('taxContext').value});
+  spin('taxSpinner',false);
+  document.getElementById('taxResultPanel').style.display='block';
+  document.getElementById('taxResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+async function calcVAT(){
+  const t=tenant()||'default';
+  const r=await post('/tax/compute/vat',{taxable_sales:parseFloat(document.getElementById('vatSales').value)||0,input_vat:parseFloat(document.getElementById('vatInput').value)||0,period:document.getElementById('vatPeriod').value});
+  document.getElementById('vatResult').innerHTML=`
+    <div class="kv"><span class="kv-key">Output VAT (18%)</span><span class="kv-val">${fmtNum(r.output_vat_18pct)} TZS</span></div>
+    <div class="kv"><span class="kv-key">Input VAT Claimed</span><span class="kv-val">${fmtNum(r.input_vat_claimed)} TZS</span></div>
+    <div class="kv"><span class="kv-key">Net VAT Payable</span><span class="kv-val" style="color:var(--warning);font-weight:700">${fmtNum(r.net_vat_payable)} TZS</span></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Due: ${r.due_date}</div>`;
+}
+
+async function calcSETax(){
+  const r=await post('/tax/compute/se-tax',{net_llc_income:parseFloat(document.getElementById('seIncome').value)||0,period:document.getElementById('sePeriod').value});
+  document.getElementById('seResult').innerHTML=`
+    <div class="kv"><span class="kv-key">SE Net (92.35%)</span><span class="kv-val">${fmtNum(r.se_net_income_92_35pct)} USD</span></div>
+    <div class="kv"><span class="kv-key">SS Tax (12.4%)</span><span class="kv-val">${fmtNum(r.ss_tax_12_4pct)} USD</span></div>
+    <div class="kv"><span class="kv-key">Medicare (2.9%)</span><span class="kv-val">${fmtNum(r.medicare_2_9pct)} USD</span></div>
+    <div class="kv"><span class="kv-key">Total SE Tax</span><span class="kv-val" style="color:var(--warning);font-weight:700">${fmtNum(r.total_se_tax)} USD</span></div>
+    <div class="kv"><span class="kv-key">50% SE Deduction</span><span class="kv-val" style="color:var(--success)">${fmtNum(r.se_tax_deduction_50pct)} USD</span></div>`;
+}
+
+// ───────────────────────── FP&A ─────────────────────────
+const FPA_TYPES={fpa_analyst:['variance','kpi','forecast','budget_review','trend','adhoc'],fpa_manager:['3statement','scenario','zbb','capex','management_pack','adhoc'],senior_fpa_manager:['lrp','board_pack','ma_analysis','capital_structure','review','adhoc'],vp_finance:['capital_structure','wacc','investor_relations','erm','consolidation','financing','adhoc'],data_analyst:['statistical','monte_carlo','anomaly','cohort','forecast','data_quality','adhoc']};
+function updateFPATypes(){const a=document.getElementById('fpaAgent').value;document.getElementById('fpaType').innerHTML=(FPA_TYPES[a]||['adhoc']).map(t=>`<option value="${t}">${t}</option>`).join('');}
+async function runFPA(){
+  const t=tenant();if(!t)return alert('Select a tenant');
+  spin('fpaSpinner',true);
+  const r=await post('/fpa/analyze',{raw_data:document.getElementById('fpaData').value,tenant_id:t,period:document.getElementById('fpaPeriod').value,jurisdiction:document.getElementById('fpaJur').value,agent_type:document.getElementById('fpaAgent').value,analysis_type:document.getElementById('fpaType').value,extra_context:document.getElementById('fpaContext').value});
+  spin('fpaSpinner',false);
+  document.getElementById('fpaResultPanel').style.display='block';
+  document.getElementById('fpaResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+// ───────────────────────── AUDIT ─────────────────────────
+const AUDIT_TYPES={compliance_auditor:['coso','sod','regulatory','rcm','calendar','adhoc'],audit_manager:['materiality','going_concern','programme','sampling','committee','adhoc'],qa_auditor:['itgc','access_review','eqcr','bcp_dr','data_governance','adhoc'],forensic_auditor:['fraud','benfords','asset_trace','aml','sar','adhoc']};
+function updateAuditTypes(){const a=document.getElementById('auditAgent').value;document.getElementById('auditScope').innerHTML=(AUDIT_TYPES[a]||['adhoc']).map(t=>`<option value="${t}">${t}</option>`).join('');}
+async function runAudit(){
+  const t=tenant();if(!t)return alert('Select a tenant');
+  spin('auditSpinner',true);
+  document.getElementById('sarBanner').style.display='none';
+  const r=await post('/audit/analyze',{raw_data:document.getElementById('auditData').value,tenant_id:t,audit_period:document.getElementById('auditPeriod').value,jurisdiction:document.getElementById('auditJur').value,agent_type:document.getElementById('auditAgent').value,audit_scope:document.getElementById('auditScope').value,extra_context:document.getElementById('auditContext').value});
+  spin('auditSpinner',false);
+  if(r._sar_alert) document.getElementById('sarBanner').style.display='block';
+  document.getElementById('auditResultPanel').style.display='block';
+  document.getElementById('auditResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+// ───────────────────────── TREASURY ─────────────────────────
+const TREAS_TYPES={cash_flow:['13week_forecast','working_capital','covenant_review','stress_test','fx_exposure','cash_pooling','adhoc'],liquidity:['liquidity_coverage','stress_test','cash_pooling','intercompany','cfp','nsfr','adhoc'],investment:['yield_optimisation','counterparty_review','ips_review','portfolio_rebalance','duration_analysis','esg_screen','adhoc'],treasury:['fx_hedging','interest_rate_risk','bank_review','treasury_policy','isda_review','tms_evaluation','adhoc'],capital_markets:['covenant_review','bond_issuance','syndicated_loan','credit_rating','lme','green_bond','adhoc'],hedge_fund:['portfolio_review','risk_attribution','derivatives_review','due_diligence','var_stress','fair_value','performance','adhoc']};
+function updateTreasTypes(){const a=document.getElementById('treasAgent').value;document.getElementById('treasType').innerHTML=(TREAS_TYPES[a]||['adhoc']).map(t=>`<option value="${t}">${t}</option>`).join('');}
+async function runTreasury(){
+  const t=tenant();if(!t)return alert('Select a tenant');
+  spin('treasSpinner',true);
+  const r=await post('/treasury/analyze',{raw_data:document.getElementById('treasData').value,tenant_id:t,period:document.getElementById('treasPeriod').value,jurisdiction:document.getElementById('treasJur').value,agent_type:document.getElementById('treasAgent').value,analysis_type:document.getElementById('treasType').value,extra_context:document.getElementById('treasContext').value});
+  spin('treasSpinner',false);
+  document.getElementById('treasResultPanel').style.display='block';
+  document.getElementById('treasResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+// ───────────────────────── CORP FINANCE ─────────────────────────
+const CORP_TYPES={investment_banker:['ma_advisory','fairness_opinion','deal_structuring','lbo','accretion_dilution','restructuring','due_diligence','adhoc'],vp_capital_markets:['ipo_readiness','equity_story','secondary_offering','investor_relations','spac','reg_d_placement','dse_listing','adhoc'],valuations:['dcf','comparable_companies','precedent_transactions','lbo','sotp','ppa','impairment','wacc','football_field','adhoc'],capital_budgeting:['capex_appraisal','portfolio_prioritisation','roic_eva','lease_vs_buy','hurdle_rate_review','stage_gate','esg_capex','adhoc']};
+function updateCorpTypes(){const a=document.getElementById('corpAgent').value;document.getElementById('corpType').innerHTML=(CORP_TYPES[a]||['adhoc']).map(t=>`<option value="${t}">${t}</option>`).join('');}
+async function runCorpFin(){
+  const t=tenant();if(!t)return alert('Select a tenant');
+  spin('corpSpinner',true);
+  const r=await post('/corpfin/analyze',{raw_data:document.getElementById('corpData').value,tenant_id:t,period:document.getElementById('corpPeriod').value,jurisdiction:document.getElementById('corpJur').value,agent_type:document.getElementById('corpAgent').value,analysis_type:document.getElementById('corpType').value,extra_context:document.getElementById('corpContext').value});
+  spin('corpSpinner',false);
+  document.getElementById('corpResultPanel').style.display='block';
+  document.getElementById('corpResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+// ───────────────────────── UNIVERSAL ─────────────────────────
+async function runUniversal(){
+  const t=tenant();if(!t)return alert('Select a tenant');
+  spin('univSpinner',true);
+  document.getElementById('univRoutingLog').style.display='none';
+  document.getElementById('univResultPanel').style.display='none';
+  const r=await post('/analyze',{raw_data:document.getElementById('univData').value,tenant_id:t,period:document.getElementById('univPeriod').value,jurisdiction:document.getElementById('univJur').value,force_department:document.getElementById('univDept').value,force_agent_type:document.getElementById('univAgent').value,force_analysis_type:document.getElementById('univAType').value});
+  spin('univSpinner',false);
+  const log=r.routing_log||{};
+  document.getElementById('univRoutingLog').style.display='block';
+  document.getElementById('univRoutingLog').innerHTML=`
+    <div class="result-section-title">Routing Log</div>
+    <div class="kv"><span class="kv-key">Department</span><span class="kv-val">${r.department||'—'}</span></div>
+    <div class="kv"><span class="kv-key">Agent Type</span><span class="kv-val">${r.agent_type||'—'}</span></div>
+    <div class="kv"><span class="kv-key">Analysis Type</span><span class="kv-val">${r.analysis_type||'—'}</span></div>
+    <div class="kv"><span class="kv-key">Jurisdiction</span><span class="kv-val">${r.jurisdiction_used||'—'}</span></div>
+    <div class="kv"><span class="kv-key">Total Time</span><span class="kv-val">${r.total_elapsed_s||'—'}s</span></div>`;
+  document.getElementById('univResultPanel').style.display='block';
+  document.getElementById('univResult').innerHTML=`<pre class="code">${JSON.stringify(r.result||r,null,2)}</pre>`;
+}
+
+// ───────────────────────── ESCALATIONS ─────────────────────────
+async function loadEscalations(filter){
+  const endpoints={all:'/escalations',pending:'/escalations/pending',rejected:'/escalations/rejected'};
+  const t=tenant();
+  const data=await get(endpoints[filter]+(filter==='all'&&t?`?tenant_id=${t}`:''));
+  const escs=data.escalations||[];
+  if(!escs.length){document.getElementById('escalationsList').innerHTML='<div class="empty-state">None found</div>';return;}
+  document.getElementById('escalationsList').innerHTML=`<table><thead><tr><th>ID</th><th>State</th><th>Tenant</th><th>Summary</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+    ${escs.slice(0,50).map(e=>{
+      let summary='—';
+      try{
+        const js=typeof e.junior_suggestion==='string'?JSON.parse(e.junior_suggestion):e.junior_suggestion;
+        const sj=js.suggestion_json||js;
+        summary=js.summary||sj.document_analysis?.parsed_fields?.vendor_name||sj.description||sj.escalation_reason||(sj.reasoning||'').slice(0,80)||'—';
+      }catch(ex){}
+      const rlog=typeof e.reasoning_log==='string'?JSON.parse(e.reasoning_log||'[]'):(e.reasoning_log||[]);
+      return `<tr>
+        <td><code style="font-size:11px">${(e.id||'').slice(0,8)}</code></td>
+        <td>${badge(e.state)}</td>
+        <td>${e.tenant_id||'—'}</td>
+        <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${summary}</td>
+        <td style="font-size:11px;color:var(--muted)">${(e.created_at||'').slice(0,16)}</td>
+        <td>
+          ${e.state==='PENDING_HUMAN'?`<button class="btn btn-success btn-sm" onclick="approveEsc('${e.id}')">✓ Approve</button> <button class="btn btn-danger btn-sm" onclick="rejectEsc('${e.id}')">✗ Reject</button>`:''}
+          ${e.state==='HUMAN_REJECTED'?`<button class="btn btn-warning btn-sm" onclick="resubmitEsc('${e.id}')">↺ Resubmit</button>`:''}
+        </td>
+      </tr>
+      ${rlog.length?`<tr><td colspan="6" style="padding:4px 12px 12px"><div style="font-size:11px;color:var(--muted)">
+        ${rlog.map(l=>`<span style="margin-right:12px">${l.stage||l.agent||l.step||'?'}: ${l.summary||l.decision||l.action||''} ${l.detail?'— '+l.detail:''} <span style="opacity:.5">${(l.timestamp||'').slice(11,19)}</span></span>`).join('')}
+      </div></td></tr>`:''}`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+async function approveEsc(id){
+  const notes=prompt('Approval notes (optional):')||'';
+  await post(`/escalations/${id}/approve`,{decision:'APPROVED',notes});
+  loadEscalations('all');
+}
+async function rejectEsc(id){
+  const notes=prompt('Rejection reason:')||'';
+  await post(`/escalations/${id}/reject`,{decision:'REJECTED',notes});
+  loadEscalations('all');
+}
+async function resubmitEsc(id){
+  const ctx=prompt('Additional context for resubmission:')||'';
+  await post(`/escalations/${id}/resubmit`,{operator_context:ctx});
+  loadEscalations('all');
+}
+
+// ───────────────────────── MARKET RATES ─────────────────────────
+let lastMarketData = null;
+
+async function loadMarketRates(){
+  document.getElementById('marketTimestamp').textContent='Fetching…';
+  try{
+    const data=await get('/market/rates?include_us_rates=true&include_tz_rates=true');
+    lastMarketData=data;
+    const meta=data.meta||{};
+    document.getElementById('marketTimestamp').textContent='Updated: '+(meta.timestamp||'').slice(0,19)+'Z';
+    document.getElementById('marketSource').textContent='Source: '+(meta.source||'—');
+
+    const badge=document.getElementById('marketBadge');
+    badge.className=meta.source==='live'?'market-badge':'market-badge stale';
+    badge.textContent=meta.source==='live'?'● Live Rates':'◑ Mixed/Cached';
+
+    // Warnings
+    const warns=meta.warnings||[];
+    document.getElementById('marketWarnings').innerHTML=warns.map(w=>`<div class="alert alert-warning" style="font-size:12px;margin-bottom:8px">${w}</div>`).join('');
+
+    // FX
+    const fx=data.fx_rates||{};
+    const fxPairs=['USD_TZS','EUR_TZS','GBP_TZS','USD_EUR','USD_GBP','EUR_USD','GBP_USD','TZS_USD'];
+    document.getElementById('fxRatesGrid').innerHTML=fxPairs.filter(k=>fx[k]).map(k=>{
+      const [f,t]=k.split('_');
+      return `<div class="rate-card"><div class="rate-name">${f} / ${t}</div><div class="rate-val">${Number(fx[k]).toLocaleString(undefined,{maximumFractionDigits:4})}</div></div>`;
+    }).join('')||'<div class="empty-state">No FX data</div>';
+
+    // US Rates
+    const us=data.us_rates||{};
+    document.getElementById('usRatesGrid').innerHTML=Object.entries(us).map(([k,v])=>`
+      <div class="rate-card"><div class="rate-name">${k.replace(/_/g,' ')}</div><div class="rate-val">${v!==null&&v!==undefined?v+'%':'—'}</div></div>`).join('')||'<div class="empty-state">No US rate data</div>';
+
+    // TZ Rates
+    const tz=data.tz_rates||{};
+    document.getElementById('tzRatesGrid').innerHTML=Object.entries(tz).filter(([k])=>!k.startsWith('_')).map(([k,v])=>`
+      <div class="rate-card"><div class="rate-name">${k.replace(/_/g,' ')}</div><div class="rate-val">${v!==null&&v!==undefined?v+'%':'—'}</div></div>`).join('')||'<div class="empty-state">No TZ rate data</div>';
+
+  } catch(e){
+    document.getElementById('marketTimestamp').textContent='Failed to load market rates';
+  }
+}
+
+async function lookupFX(){
+  const from=document.getElementById('fxFrom').value.toUpperCase();
+  const to=document.getElementById('fxTo').value.toUpperCase();
+  if(!from||!to) return;
+  try{
+    const r=await get(`/market/fx/${from}/${to}`);
+    document.getElementById('fxLookupResult').innerHTML=`
+      <strong style="color:var(--accent2);font-size:18px">1 ${r.from} = ${Number(r.rate).toLocaleString(undefined,{maximumFractionDigits:6})} ${r.to}</strong>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">${(r.timestamp||'').slice(0,19)}Z</div>`;
+  } catch(e){
+    document.getElementById('fxLookupResult').innerHTML=`<span style="color:var(--danger)">Rate not found for ${from}/${to}</span>`;
+  }
+}
+
+// ───────────────────────── REPORTS ─────────────────────────
+async function loadReports(){
+  const t=tenant();
+  const data=await get('/reports'+(t?`?tenant_id=${t}`:''));
+  const reports=data.reports||[];
+  document.getElementById('reportsList').innerHTML=reports.length
+    ?`<table><thead><tr><th>Filename</th><th>Size</th><th>Created</th><th></th></tr></thead><tbody>
+        ${reports.map(r=>`<tr><td>${r.filename}</td><td>${(r.size_bytes/1024).toFixed(1)} KB</td>
+          <td style="font-size:11px;color:var(--muted)">${(r.created_at||'').slice(0,16)}</td>
+          <td><a href="/reports/${r.filename}" target="_blank" class="btn btn-ghost btn-sm">⬇ Download</a></td></tr>`).join('')}
+      </tbody></table>`
+    :'<div class="empty-state">No reports yet</div>';
+}
+
+// ───────────────────────── INIT ─────────────────────────
+(async()=>{
+  await loadTenants();
+  updateAcctAnalysisTypes();
+  updateFPATypes();
+  updateAuditTypes();
+  updateTreasTypes();
+  updateCorpTypes();
+})();
+</script>
+</body>
+</html>

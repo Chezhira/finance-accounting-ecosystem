@@ -1,0 +1,116 @@
+{
+  "_meta": {
+    "version": "2025.1",
+    "effective_date": "2025-07-01",
+    "last_updated": "2026-04-06",
+    "note": "Update this file when tax laws change. Do NOT change agent code for rate updates. Increment version on every change."
+  },
+
+  "Tanzania": {
+    "_jurisdiction": "Tanzania",
+    "_standard": "IFRS",
+    "_regulator": "TRA",
+    "_currency": "TZS",
+    "_finance_act": "Finance Act 2025",
+
+    "corporate_tax_rate": 0.30,
+    "corporate_tax_rate_note": "30% for resident companies",
+
+    "vat_standard_mainland": 0.18,
+    "vat_b2c_digital": 0.16,
+    "vat_zanzibar": 0.15,
+    "vat_registration_threshold_tzs": 200000000,
+    "vat_return_due_day": 20,
+    "vat_return_due_note": "20th of the following month",
+
+    "vat_withholding_goods": 0.03,
+    "vat_withholding_services": 0.06,
+    "vat_withholding_note": "Finance Act 2025 — VAT Withholding Agent obligations",
+
+    "amt_rate": 0.01,
+    "amt_trigger_loss_years": 3,
+    "amt_note": "1% of turnover; applies when company has losses for 3+ consecutive years",
+
+    "provisional_tax_quarters": 4,
+    "provisional_tax_due_months_after_quarter": 3,
+    "final_tax_return_months_after_fy_end": 6,
+
+    "wht_dividends_resident": 0.05,
+    "wht_dividends_nonresident": 0.10,
+    "wht_interest": 0.15,
+    "wht_royalties": 0.15,
+    "wht_imported_services": 0.15,
+    "wht_imported_services_note": "Section 83 Income Tax Act — deducted at PAYMENT not accrual",
+
+    "reverse_charge_vat_rate": 0.18,
+    "reverse_charge_vat_note": "Self-assessed on imported digital/software services",
+
+    "deferred_tax_standard": "IAS 12",
+    "fx_standard": "IAS 21",
+
+    "compliance_calendar": {
+      "vat_return": "20th of following month",
+      "provisional_tax_q1": "Within 3 months of Q1 end",
+      "provisional_tax_q2": "Within 3 months of Q2 end",
+      "provisional_tax_q3": "Within 3 months of Q3 end",
+      "provisional_tax_q4": "Within 3 months of Q4 end",
+      "final_tax_return": "Within 6 months of financial year end",
+      "audited_accounts": "Within 6 months of financial year end"
+    }
+  },
+
+  "UnitedStates": {
+    "_jurisdiction": "United States",
+    "_standard": "US GAAP",
+    "_regulator": "IRS",
+    "_currency": "USD",
+    "_entity_type": "Family-Owned LLC (Pass-Through)",
+
+    "pass_through_taxation": true,
+    "pass_through_note": "LLC taxed as pass-through by default — no entity-level federal income tax",
+
+    "se_tax_factor": 0.9235,
+    "se_tax_factor_note": "Apply FIRST before any rate. SE Net = Net LLC Income × 0.9235",
+    "se_tax_total_rate": 0.153,
+    "ss_rate": 0.124,
+    "ss_wage_base_2025": 176100,
+    "ss_wage_base_2026": 184500,
+    "medicare_rate": 0.029,
+    "additional_medicare_rate": 0.009,
+    "additional_medicare_threshold_single": 200000,
+    "additional_medicare_threshold_married": 250000,
+    "se_tax_deduction_rate": 0.50,
+    "se_tax_deduction_note": "50% of SE tax deductible from gross income (above-the-line)",
+
+    "qbi_deduction_rate": 0.20,
+    "qbi_deduction_code": "IRC §199A",
+    "qbi_deduction_note": "20% of qualified business income; subject to income thresholds",
+    "qbi_threshold_single_2025": 197300,
+    "qbi_threshold_married_2025": 394600,
+
+    "salt_deduction_cap_2025": 40000,
+    "salt_deduction_note": "One Big Beautiful Bill Act — $40,000 cap from 2025",
+
+    "quarterly_estimated_tax_dates": {
+      "Q1": "April 15",
+      "Q2": "June 15",
+      "Q3": "September 15",
+      "Q4": "January 15 (following year)"
+    },
+    "safe_harbour_prior_year_rate": 1.00,
+    "safe_harbour_prior_year_rate_high_income": 1.10,
+    "safe_harbour_high_income_threshold": 150000,
+    "safe_harbour_note": "Pay 100% (or 110% if prior year AGI >$150k) of prior year tax to avoid underpayment penalty",
+
+    "key_forms": ["Schedule C", "Form 1065", "Schedule K-1", "Form 1040-ES", "Schedule SE"],
+
+    "compliance_calendar": {
+      "q1_estimated": "April 15",
+      "q2_estimated": "June 15",
+      "q3_estimated": "September 15",
+      "q4_estimated": "January 15",
+      "annual_return_partnership": "March 15 (Form 1065)",
+      "annual_return_individual": "April 15 (Form 1040)"
+    }
+  }
+}

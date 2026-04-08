@@ -1,0 +1,19 @@
+# Environment — contains real API keys, never commit
+.env
+
+# SQLite databases — contain live financial data
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Reports (auto-generated PDFs)
+reports/*.pdf
+
+# Virtual environments
+venv/
+.venv/
+env/
