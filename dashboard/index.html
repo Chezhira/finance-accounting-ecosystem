@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>FinOps Ecosystem v5.1.0</title>
+<title>FinOps Ecosystem v5.4.0</title>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--card:#22263a;--border:#2e3350;--accent:#6c63ff;--accent2:#00d4aa;--accent3:#ff6b6b;--accent4:#ffd166;--text:#e8eaf0;--muted:#8890b0;--success:#00d4aa;--warning:#ffd166;--danger:#ff6b6b;--info:#64b5f6;--radius:10px;--font:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -124,7 +124,7 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
 <body>
 
 <header>
-  <div class="logo">FinOps Ecosystem <span>v5.1.0 · Session 10</span></div>
+  <div class="logo">FinOps Ecosystem <span>v5.4.0 · Session 13</span></div>
   <div class="header-right">
     <span class="market-badge" id="marketBadge" onclick="showTab('market')">● Market Rates</span>
     <span class="version-badge">Python · FastAPI · Claude API</span>
@@ -247,32 +247,147 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
 
 <!-- ============================= TAX ============================= -->
 <div class="tab-content" id="tab-tax">
-  <div class="grid-2">
-    <div>
+  <!-- Tax sub-tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="showTaxSub('compliance')" id="taxBtn-compliance">🧾 Compliance</button>
+    <button class="btn btn-ghost btn-sm" onclick="showTaxSub('supervisor')" id="taxBtn-supervisor">🔎 Supervisor Review</button>
+    <button class="btn btn-ghost btn-sm" onclick="showTaxSub('accounting')" id="taxBtn-accounting">📒 Tax Accountant</button>
+    <button class="btn btn-ghost btn-sm" onclick="showTaxSub('strategy')" id="taxBtn-strategy">♟ Tax Strategy</button>
+    <button class="btn btn-ghost btn-sm" onclick="showTaxSub('calculators')" id="taxBtn-calculators">🔢 Calculators</button>
+  </div>
+
+  <!-- Compliance sub-tab -->
+  <div id="taxSub-compliance">
+    <div class="grid-2">
       <div class="card">
-        <div class="card-title">Tax Analysis</div>
-        <div class="form-group">
-          <label>Jurisdiction</label>
-          <select id="taxJur"><option value="TZ">Tanzania (TRA / IFRS)</option><option value="US">United States (IRS / GAAP)</option></select>
+        <div class="card-title">Tax Compliance Analysis (TZ / US)</div>
+        <div class="form-row">
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="taxJur"><option value="TZ">Tanzania (TRA / IFRS)</option><option value="US">United States (IRS / GAAP)</option></select>
+          </div>
+          <div class="form-group"><label>Period</label><input id="taxPeriod" placeholder="e.g. Q1 2025"/></div>
         </div>
-        <div class="form-group">
-          <label>Period</label>
-          <input id="taxPeriod" placeholder="e.g. Q1 2025"/>
+        <div class="form-group"><label>Raw Data</label><textarea id="taxData" placeholder="Paste invoices, financial data, payroll…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="taxContext" placeholder="Optional notes…"/></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="runTax()"><span id="taxSpinner"></span>Analyse</button>
+          <button class="btn btn-ghost" onclick="runTaxSupervised()"><span id="taxSupSpinner"></span>Analyse + Supervise</button>
         </div>
-        <div class="form-group">
-          <label>Raw Data</label>
-          <textarea id="taxData" placeholder="Paste invoices, financial data, payroll…"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Extra Context</label>
-          <input id="taxContext" placeholder="Optional notes…"/>
-        </div>
-        <button class="btn btn-primary" onclick="runTax()"><span id="taxSpinner"></span>Analyse Tax</button>
       </div>
+      <div>
+        <div id="taxResultPanel" class="result-panel" style="display:none"><div id="taxEscBanner" style="display:none"></div><div id="taxResult"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supervisor sub-tab -->
+  <div id="taxSub-supervisor" style="display:none">
+    <div class="grid-2">
       <div class="card">
-        <div class="card-title">Quick Calculators</div>
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">TZ — VAT Return</div>
+        <div class="card-title">Tax Supervisor Review</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Paste a completed tax analysis JSON to run it through the Tax Supervisor (ATAX / CPA(T) / EA / ACCA ATX / CTA).</p>
+        <div class="form-group"><label>Tax Analysis JSON</label><textarea id="supTaxJson" style="min-height:200px;font-family:monospace;font-size:11px" placeholder='{"agent":"TaxAgentTZ","tax_items":[...],...}'></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="supTaxContext" placeholder="Supervisor notes, questions…"/></div>
+        <button class="btn btn-primary" onclick="runSupervisor()"><span id="supSpinner"></span>Run Supervisor Review</button>
+      </div>
+      <div>
+        <div id="supResultPanel" class="result-panel" style="display:none"><div id="supResult"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax Accountant sub-tab -->
+  <div id="taxSub-accounting" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Tax Accountant — IAS 12 / ASC 740</div>
+        <div class="form-row">
+          <div class="form-group"><label>Analysis Type</label>
+            <select id="taxAccType">
+              <option value="deferred_tax">Deferred Tax Computation</option>
+              <option value="current_tax_provision">Current Tax Provision</option>
+              <option value="tax_journal_entries">Tax Journal Entries</option>
+              <option value="wht_reconciliation">WHT Reconciliation</option>
+              <option value="vat_reconciliation">VAT Reconciliation</option>
+              <option value="tax_balance_sheet">Tax Balance Sheet</option>
+              <option value="uncertain_tax_position">Uncertain Tax Position</option>
+              <option value="effective_tax_rate">Effective Tax Rate</option>
+              <option value="tax_provision_rollforward">Provision Rollforward</option>
+              <option value="intercompany_tax">Intercompany Tax</option>
+              <option value="general_tax_accounting">General</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="taxAccJur"><option value="Tanzania">Tanzania</option><option value="United States">United States</option><option value="Both">Both</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Period</label><input id="taxAccPeriod" placeholder="e.g. March 2026"/></div>
+        <div class="form-group"><label>Raw Data</label><textarea id="taxAccData" placeholder="Trial balance, TB extract, tax comp workings, GL export…"></textarea></div>
+        <div class="form-group"><label>Extra Context</label><input id="taxAccContext" placeholder="Prior period figures, assumptions…"/></div>
+        <button class="btn btn-primary" onclick="runTaxAccounting()"><span id="taxAccSpinner"></span>Run Analysis</button>
+      </div>
+      <div>
+        <div id="taxAccResultPanel" class="result-panel" style="display:none">
+          <div id="taxAccEscBanner" style="display:none"></div>
+          <div id="taxAccResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax Strategy sub-tab -->
+  <div id="taxSub-strategy" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Tax Strategy Manager — CTA / LLM Tax / CPA</div>
+        <div class="form-row">
+          <div class="form-group"><label>Analysis Type</label>
+            <select id="taxStratType">
+              <option value="entity_structure">Entity Structure Optimisation</option>
+              <option value="transfer_pricing">Transfer Pricing Strategy</option>
+              <option value="treaty_planning">Tax Treaty Planning</option>
+              <option value="tax_incentives">Tax Incentives & Reliefs</option>
+              <option value="financing_structure">Tax-Efficient Financing</option>
+              <option value="ma_tax">M&A Tax Due Diligence</option>
+              <option value="exit_strategy">Exit Strategy Tax Planning</option>
+              <option value="tax_risk_framework">Tax Risk Assessment</option>
+              <option value="cross_border">Cross-Border Planning</option>
+              <option value="annual_tax_plan">Annual Tax Plan</option>
+              <option value="general_tax_strategy">General Strategy</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Jurisdiction</label>
+            <select id="taxStratJur"><option value="Both">Both (TZ + US)</option><option value="Tanzania">Tanzania</option><option value="United States">United States</option><option value="Cross-border">Cross-border</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Planning Horizon</label>
+            <select id="taxStratHorizon"><option value="all">All Horizons</option><option value="short_term">Short Term</option><option value="medium_term">Medium Term</option><option value="long_term">Long Term</option></select>
+          </div>
+          <div class="form-group"><label>Reference Period</label><input id="taxStratPeriod" placeholder="FY2026"/></div>
+        </div>
+        <div class="form-group"><label>Business Information</label><textarea id="taxStratData" placeholder="Business description, entity structure, revenue, key transactions, specific questions…"></textarea></div>
+        <div class="form-group"><label>Specific Questions</label><input id="taxStratContext" placeholder="e.g. 'Can we use SEZ status? What is our TP exposure?'"/></div>
+        <div class="alert" style="background:#1a1a2e;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--muted);margin-bottom:12px">
+          ⚠️ Strategy output is advisory only. All recommendations require legal review before implementation.
+        </div>
+        <button class="btn btn-primary" onclick="runTaxStrategy()"><span id="taxStratSpinner"></span>Run Strategy Analysis</button>
+      </div>
+      <div>
+        <div id="taxStratResultPanel" class="result-panel" style="display:none">
+          <div id="taxStratEscBanner" style="display:none"></div>
+          <div id="taxStratResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculators sub-tab -->
+  <div id="taxSub-calculators" style="display:none">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">TZ — VAT Return</div>
           <div class="form-row" style="margin-bottom:8px">
             <div><label>Taxable Sales (TZS)</label><input id="vatSales" type="number" placeholder="0"/></div>
             <div><label>Input VAT (TZS)</label><input id="vatInput" type="number" placeholder="0"/></div>
@@ -281,20 +396,15 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
           <button class="btn btn-ghost btn-sm" onclick="calcVAT()">Calculate</button>
           <div id="vatResult" style="margin-top:8px"></div>
         </div>
-        <hr style="border-color:var(--border);margin:12px 0"/>
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">US — SE Tax</div>
+        <div class="card">
+          <div class="card-title">US — SE Tax (LLC)</div>
           <div class="form-group"><label>Net LLC Income (USD)</label><input id="seIncome" type="number" placeholder="0"/></div>
           <div class="form-group"><label>Period</label><input id="sePeriod" placeholder="2025"/></div>
           <button class="btn btn-ghost btn-sm" onclick="calcSETax()">Calculate</button>
           <div id="seResult" style="margin-top:8px"></div>
         </div>
       </div>
-    </div>
-    <div>
-      <div id="taxResultPanel" class="result-panel" style="display:none">
-        <div id="taxResult"></div>
-      </div>
+      <div></div>
     </div>
   </div>
 </div>
@@ -328,7 +438,10 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
       </div>
     </div>
     <div>
-      <div id="fpaResultPanel" class="result-panel" style="display:none"><div id="fpaResult"></div></div>
+      <div id="fpaResultPanel" class="result-panel" style="display:none">
+        <div id="fpaEscBanner" style="display:none"></div>
+        <div id="fpaResult"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -367,6 +480,7 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
       <div id="sarBanner" class="alert alert-danger" style="display:none">
         🚨 SAR/STR REQUIRED — Forensic Auditor has flagged mandatory suspicious activity reporting. Review immediately.
       </div>
+      <div id="auditEscBanner" style="display:none"></div>
       <div id="auditResultPanel" class="result-panel" style="display:none"><div id="auditResult"></div></div>
     </div>
   </div>
@@ -402,7 +516,10 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
       </div>
     </div>
     <div>
-      <div id="treasResultPanel" class="result-panel" style="display:none"><div id="treasResult"></div></div>
+      <div id="treasResultPanel" class="result-panel" style="display:none">
+        <div id="treasEscBanner" style="display:none"></div>
+        <div id="treasResult"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -435,7 +552,10 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
       </div>
     </div>
     <div>
-      <div id="corpResultPanel" class="result-panel" style="display:none"><div id="corpResult"></div></div>
+      <div id="corpResultPanel" class="result-panel" style="display:none">
+        <div id="corpEscBanner" style="display:none"></div>
+        <div id="corpResult"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -937,6 +1057,31 @@ function renderAcctResult(r){
 function toggleRaw(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
 // ───────────────────────── TAX ─────────────────────────
+
+// Helper: show Phase 4D escalation banner
+function showEscBanner(bannerId, r){
+  const el=document.getElementById(bannerId);
+  if(!el) return;
+  if(r.escalation_id){
+    el.style.display='block';
+    el.innerHTML=`<div class="alert alert-danger" style="margin-bottom:10px">
+      ⛓ <strong>Phase 4D Auto-Escalated</strong> — CRITICAL finding raised to escalation queue.<br>
+      <span style="font-size:11px">ID: <code>${r.escalation_id}</code> &nbsp;|&nbsp; ${r.escalation_message||''}</span>
+    </div>`;
+  } else {
+    el.style.display='none';
+  }
+}
+
+// Sub-tab switcher
+function showTaxSub(name){
+  ['compliance','supervisor','accounting','strategy','calculators'].forEach(s=>{
+    document.getElementById('taxSub-'+s).style.display=(s===name)?'':'none';
+    const btn=document.getElementById('taxBtn-'+s);
+    if(btn){btn.className=s===name?'btn btn-primary btn-sm':'btn btn-ghost btn-sm';}
+  });
+}
+
 async function runTax(){
   const t=tenant(); if(!t) return alert('Select a tenant');
   spin('taxSpinner',true);
@@ -944,6 +1089,61 @@ async function runTax(){
   spin('taxSpinner',false);
   document.getElementById('taxResultPanel').style.display='block';
   document.getElementById('taxResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+async function runTaxSupervised(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('taxSupSpinner',true);
+  const r=await post('/tax/analyze/supervised',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,extra_context:document.getElementById('taxContext').value});
+  spin('taxSupSpinner',false);
+  const esc=document.getElementById('taxEscBanner');
+  if(r.supervisor_review){
+    const sv=r.supervisor_review;
+    if(esc) {
+      esc.style.display='block';
+      const dec=sv.decision||'—';
+      const color=dec==='ESCALATE'?'var(--danger)':dec==='APPROVED'?'var(--success)':'var(--warning)';
+      esc.innerHTML=`<div class="alert" style="border:1px solid ${color};background:rgba(0,0,0,.3);margin-bottom:10px">
+        🔎 <strong>Supervisor:</strong> <span style="color:${color};font-weight:700">${dec}</span>
+        ${sv.overall_assessment?` — ${sv.overall_assessment.slice(0,150)}…`:''}
+        ${r.escalation_id?`<br><span style="font-size:11px">Escalation ID: <code>${r.escalation_id}</code></span>`:''}
+      </div>`;
+    }
+  } else if(esc){ esc.style.display='none'; }
+  document.getElementById('taxResultPanel').style.display='block';
+  document.getElementById('taxResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+async function runSupervisor(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('supSpinner',true);
+  let taxJson={};
+  try{ taxJson=JSON.parse(document.getElementById('supTaxJson').value); }
+  catch(e){ spin('supSpinner',false); return alert('Invalid JSON: '+e.message); }
+  const r=await post('/tax/supervise',{tax_analysis:taxJson,tenant_id:t,extra_context:document.getElementById('supTaxContext').value});
+  spin('supSpinner',false);
+  document.getElementById('supResultPanel').style.display='block';
+  document.getElementById('supResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+async function runTaxAccounting(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('taxAccSpinner',true);
+  const r=await post('/tax/accounting/analyze',{raw_input:document.getElementById('taxAccData').value,tenant_id:t,jurisdiction:document.getElementById('taxAccJur').value,period:document.getElementById('taxAccPeriod').value,analysis_type:document.getElementById('taxAccType').value,extra_context:document.getElementById('taxAccContext').value});
+  spin('taxAccSpinner',false);
+  showEscBanner('taxAccEscBanner',r);
+  document.getElementById('taxAccResultPanel').style.display='block';
+  document.getElementById('taxAccResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
+}
+
+async function runTaxStrategy(){
+  const t=tenant(); if(!t) return alert('Select a tenant');
+  spin('taxStratSpinner',true);
+  const r=await post('/tax/strategy/analyze',{raw_input:document.getElementById('taxStratData').value,tenant_id:t,jurisdiction:document.getElementById('taxStratJur').value,analysis_type:document.getElementById('taxStratType').value,horizon:document.getElementById('taxStratHorizon').value,period:document.getElementById('taxStratPeriod').value,extra_context:document.getElementById('taxStratContext').value});
+  spin('taxStratSpinner',false);
+  showEscBanner('taxStratEscBanner',r);
+  document.getElementById('taxStratResultPanel').style.display='block';
+  document.getElementById('taxStratResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
 }
 
 async function calcVAT(){
@@ -974,6 +1174,7 @@ async function runFPA(){
   spin('fpaSpinner',true);
   const r=await post('/fpa/analyze',{raw_data:document.getElementById('fpaData').value,tenant_id:t,period:document.getElementById('fpaPeriod').value,jurisdiction:document.getElementById('fpaJur').value,agent_type:document.getElementById('fpaAgent').value,analysis_type:document.getElementById('fpaType').value,extra_context:document.getElementById('fpaContext').value});
   spin('fpaSpinner',false);
+  showEscBanner('fpaEscBanner',r);
   document.getElementById('fpaResultPanel').style.display='block';
   document.getElementById('fpaResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
 }
@@ -988,6 +1189,7 @@ async function runAudit(){
   const r=await post('/audit/analyze',{raw_data:document.getElementById('auditData').value,tenant_id:t,audit_period:document.getElementById('auditPeriod').value,jurisdiction:document.getElementById('auditJur').value,agent_type:document.getElementById('auditAgent').value,audit_scope:document.getElementById('auditScope').value,extra_context:document.getElementById('auditContext').value});
   spin('auditSpinner',false);
   if(r._sar_alert) document.getElementById('sarBanner').style.display='block';
+  showEscBanner('auditEscBanner',r);
   document.getElementById('auditResultPanel').style.display='block';
   document.getElementById('auditResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
 }
@@ -1000,6 +1202,7 @@ async function runTreasury(){
   spin('treasSpinner',true);
   const r=await post('/treasury/analyze',{raw_data:document.getElementById('treasData').value,tenant_id:t,period:document.getElementById('treasPeriod').value,jurisdiction:document.getElementById('treasJur').value,agent_type:document.getElementById('treasAgent').value,analysis_type:document.getElementById('treasType').value,extra_context:document.getElementById('treasContext').value});
   spin('treasSpinner',false);
+  showEscBanner('treasEscBanner',r);
   document.getElementById('treasResultPanel').style.display='block';
   document.getElementById('treasResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
 }
@@ -1012,6 +1215,7 @@ async function runCorpFin(){
   spin('corpSpinner',true);
   const r=await post('/corpfin/analyze',{raw_data:document.getElementById('corpData').value,tenant_id:t,period:document.getElementById('corpPeriod').value,jurisdiction:document.getElementById('corpJur').value,agent_type:document.getElementById('corpAgent').value,analysis_type:document.getElementById('corpType').value,extra_context:document.getElementById('corpContext').value});
   spin('corpSpinner',false);
+  showEscBanner('corpEscBanner',r);
   document.getElementById('corpResultPanel').style.display='block';
   document.getElementById('corpResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
 }
