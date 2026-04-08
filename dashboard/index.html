@@ -262,8 +262,19 @@ pre.code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;pad
       <div class="card">
         <div class="card-title">Tax Compliance Analysis (TZ / US)</div>
         <div class="form-row">
+          <div class="form-group"><label>Agent</label>
+            <select id="taxAgent" onchange="updateTaxTypes()">
+              <option value="TaxAgentTZ">TaxAgent TZ (TRA / IFRS)</option>
+              <option value="TaxAgentUS">TaxAgent US (IRS / GAAP)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Analysis Type</label>
+            <select id="taxType"></select>
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group"><label>Jurisdiction</label>
-            <select id="taxJur"><option value="TZ">Tanzania (TRA / IFRS)</option><option value="US">United States (IRS / GAAP)</option></select>
+            <select id="taxJur"><option value="TZ">Tanzania</option><option value="US">United States</option></select>
           </div>
           <div class="form-group"><label>Period</label><input id="taxPeriod" placeholder="e.g. Q1 2025"/></div>
         </div>
@@ -1057,6 +1068,16 @@ function renderAcctResult(r){
 function toggleRaw(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
 // ───────────────────────── TAX ─────────────────────────
+const TAX_TYPES={
+  TaxAgentTZ:['vat_compliance','withholding_tax','corporate_income_tax','payroll_paye','stamp_duty','customs_import','tax_reconciliation','penalty_interest','general_tax_compliance'],
+  TaxAgentUS:['federal_income_tax','payroll_fica','estimated_quarterly','sales_use_tax','1099_reporting','llc_pass_through','state_income_tax','excise_tax','general_tax_compliance']
+};
+function updateTaxTypes(){
+  const a=document.getElementById('taxAgent').value;
+  document.getElementById('taxType').innerHTML=(TAX_TYPES[a]||['general_tax_compliance']).map(t=>`<option value="${t}">${t.replace(/_/g,' ')}</option>`).join('');
+  // sync jurisdiction
+  document.getElementById('taxJur').value=a==='TaxAgentTZ'?'TZ':'US';
+}
 
 // Helper: show Phase 4D escalation banner
 function showEscBanner(bannerId, r){
@@ -1085,7 +1106,7 @@ function showTaxSub(name){
 async function runTax(){
   const t=tenant(); if(!t) return alert('Select a tenant');
   spin('taxSpinner',true);
-  const r=await post('/tax/analyze',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,extra_context:document.getElementById('taxContext').value});
+  const r=await post('/tax/analyze',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,agent_type:document.getElementById('taxAgent').value,analysis_type:document.getElementById('taxType').value,extra_context:document.getElementById('taxContext').value});
   spin('taxSpinner',false);
   document.getElementById('taxResultPanel').style.display='block';
   document.getElementById('taxResult').innerHTML=`<pre class="code">${JSON.stringify(r,null,2)}</pre>`;
@@ -1094,7 +1115,7 @@ async function runTax(){
 async function runTaxSupervised(){
   const t=tenant(); if(!t) return alert('Select a tenant');
   spin('taxSupSpinner',true);
-  const r=await post('/tax/analyze/supervised',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,extra_context:document.getElementById('taxContext').value});
+  const r=await post('/tax/analyze/supervised',{raw_data:document.getElementById('taxData').value,tenant_id:t,period:document.getElementById('taxPeriod').value,jurisdiction:document.getElementById('taxJur').value,agent_type:document.getElementById('taxAgent').value,analysis_type:document.getElementById('taxType').value,extra_context:document.getElementById('taxContext').value});
   spin('taxSupSpinner',false);
   const esc=document.getElementById('taxEscBanner');
   if(r.supervisor_review){
@@ -1366,6 +1387,7 @@ async function loadReports(){
 (async()=>{
   await loadTenants();
   updateAcctAnalysisTypes();
+  updateTaxTypes();
   updateFPATypes();
   updateAuditTypes();
   updateTreasTypes();
