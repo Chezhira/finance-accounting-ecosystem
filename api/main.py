@@ -55,9 +55,10 @@ from agents.tax_agent_tz import TaxAgentTZ, TZ_TAX_RULES
 from agents.tax_agent_us import TaxAgentUS, US_TAX_RULES
 from agents.tax_orchestrator import TaxOrchestrator
 
-# Session 12 — Tax Supervisor + Tax Accountant
+# Session 12 — Tax Supervisor + Tax Accountant + Tax Strategy Manager
 from agents.tax_supervisor import TaxSupervisorAgent
 from agents.tax_accountant import TaxAccountantAgent, TAX_ACCOUNTANT_DEFINITIONS
+from agents.tax_strategy_manager import TaxStrategyManagerAgent, TAX_STRATEGY_DEFINITIONS
 
 # Phase 4A
 from agents.fpa_agents import (
@@ -96,7 +97,7 @@ esc_store = EscalationStore()          # shared singleton — avoids per-request
 ingestor = DataIngestor()
 market_adapter = get_market_data_adapter(live=MARKET_DATA_LIVE)
 
-app = FastAPI(title="FinOps Ecosystem", version="5.3.0")
+app = FastAPI(title="FinOps Ecosystem", version="5.4.0")
 
 # ---------------------------------------------------------------------------
 # FP&A agent registry (defined here — not exported from fpa_agents.py)
@@ -187,6 +188,66 @@ def require_permission(permission: str):
         if permission not in role_info["permissions"]:
             raise HTTPException(status_code=403, detail=f"Permission '{permission}' required")
         return role_info
+
+# ---------------------------------------------------------------------------
+# Phase 4D — Shared escalation helper
+# ---------------------------------------------------------------------------
+def _phase4d_auto_escalate(result: dict, tenant_id: str, department: str) -> dict:
+    """
+    Phase 4D: Auto-escalate CRITICAL findings from FP&A, Audit, Treasury,
+    and Corp Finance departments into the EscalationStore.
+
+    Checks multiple result structures (flags[], findings[], risk_items[]) for
+    CRITICAL severity. If found, creates an escalation and attaches the ID.
+    Returns the result dict (mutated in-place with escalation metadata).
+    """
+    def _has_critical(obj: dict) -> bool:
+        # Check top-level flags array
+        for flag in obj.get("flags", []):
+            if isinstance(flag, dict) and flag.get("severity") == "CRITICAL":
+                return True
+        # Check findings (audit agents)
+        for finding in obj.get("findings", []):
+            if isinstance(finding, dict) and finding.get("severity") == "CRITICAL":
+                return True
+        # Check risks (corp finance, treasury)
+        for risk in obj.get("risks", []) + obj.get("risk_items", []):
+            if isinstance(risk, dict) and risk.get("severity") == "CRITICAL":
+                return True
+        # Check explicit auto_escalate flag (accounting specialist pattern)
+        if obj.get("auto_escalate"):
+            return True
+        # Check SAR/STR mandatory reporting (forensic auditor)
+        if obj.get("_sar_alert") or obj.get("mandatory_reporting", {}).get("sar_str_required"):
+            return True
+        return False
+
+    if not _has_critical(result):
+        result["escalation_status"] = "not_required"
+        return result
+
+    try:
+        esc_id = esc_store.create(
+            tenant_id=tenant_id,
+            junior_suggestion={
+                **result,
+                "_department": department,
+                "_escalation_reason": "Phase 4D auto-escalation — CRITICAL finding detected",
+            },
+        )
+        result["escalation_id"] = esc_id
+        result["escalation_status"] = "auto_escalated"
+        result["escalation_message"] = (
+            f"CRITICAL finding auto-escalated to review queue. "
+            f"Escalation ID: {esc_id}. See /escalations tab."
+        )
+        logger.info("Phase 4D auto-escalation — dept=%s tenant=%s esc_id=%s", department, tenant_id, esc_id)
+    except Exception as exc:
+        logger.warning("Phase 4D auto-escalation failed — dept=%s error=%s", department, exc)
+        result["escalation_status"] = "escalation_failed"
+        result["escalation_error"] = str(exc)
+
+    return result
     return checker
 
 # ---------------------------------------------------------------------------
@@ -396,7 +457,7 @@ def health():
         "agents": {
             "accounting": ["JuniorAccountant", "SeniorAccountant", "FinancialController",
                            "CostAccountant", "RevenueAccountant", "AccountingManager"],
-            "tax": ["TaxAgentTZ", "TaxAgentUS", "TaxOrchestrator", "TaxSupervisorAgent", "TaxAccountantAgent"],
+            "tax": ["TaxAgentTZ", "TaxAgentUS", "TaxOrchestrator", "TaxSupervisorAgent", "TaxAccountantAgent", "TaxStrategyManagerAgent"],
             "fpa": [d["display_name"] for d in FPA_AGENT_DEFINITIONS],
             "audit": [d["display_name"] for d in AUDIT_AGENT_DEFINITIONS],
             "treasury": [d.get("display_name") or d.get("class") or d["agent_type"] for d in TREASURY_AGENT_DEFINITIONS],
@@ -800,6 +861,45 @@ def tax_accounting_analyze(body: TaxAccountingRequest, _: dict = Depends(require
             logger.warning("Tax accounting auto-escalation failed: %s", exc)
     return result
 
+class TaxStrategyRequest(BaseModel):
+    raw_data: str = Field(..., max_length=200_000)
+    tenant_id: str
+    jurisdiction: str = "Both"
+    analysis_type: str = "general_tax_strategy"
+    horizon: str = "all"
+    period: Optional[str] = None
+    extra_context: str = Field("", max_length=10_000)
+    enable_research: bool = False
+
+@app.get("/tax/strategy/agents")
+def tax_strategy_agents(_: dict = Depends(require_permission("tax"))):
+    return {"agents": TAX_STRATEGY_DEFINITIONS}
+
+@app.post("/tax/strategy/analyze")
+def tax_strategy_analyze(body: TaxStrategyRequest, _: dict = Depends(require_permission("tax"))):
+    """Tax Strategy Manager — forward-looking tax planning, structuring, and risk assessment."""
+    agent = TaxStrategyManagerAgent()
+    result = agent.analyze(
+        raw_input=body.raw_data,
+        tenant_id=body.tenant_id,
+        jurisdiction=body.jurisdiction,
+        analysis_type=body.analysis_type,
+        horizon=body.horizon,
+        period=body.period,
+        extra_context=body.extra_context,
+    )
+    if result.get("auto_escalate"):
+        try:
+            esc_id = esc_store.create(
+                tenant_id=body.tenant_id,
+                junior_suggestion=result,
+            )
+            result["escalation_id"] = esc_id
+            result["escalation_message"] = "CRITICAL tax risk auto-escalated to review queue."
+        except Exception as exc:
+            logger.warning("Tax strategy auto-escalation failed: %s", exc)
+    return result
+
 # ---------------------------------------------------------------------------
 # FP&A
 # ---------------------------------------------------------------------------
@@ -836,7 +936,8 @@ def fpa_analyze(body: FPAAnalyzeRequest, _: dict = Depends(require_permission("f
     elif body.agent_type == "vp_finance":
         kwargs["senior_fpa_output"] = body.extra_context
 
-    return agent.analyze(**kwargs)
+    result = agent.analyze(**kwargs)
+    return _phase4d_auto_escalate(result, body.tenant_id, "fpa")
 
 # ---------------------------------------------------------------------------
 # Audit
@@ -865,26 +966,31 @@ def audit_analyze(body: AuditAnalyzeRequest, _: dict = Depends(require_permissio
                 "banner": "⚠️ SAR/STR REQUIRED — Forensic Auditor has flagged mandatory reporting. Human operator must review and file.",
                 "severity": "CRITICAL"
             }
-        return result
-    return agent.audit(
-        raw_data=body.raw_data,
-        audit_period=body.audit_period,
-        tenant_id=body.tenant_id,
-        jurisdiction=body.jurisdiction,
-        audit_type=body.audit_scope if body.agent_type == "audit_manager" else None,
-        audit_scope=body.audit_scope if body.agent_type == "compliance_auditor" else None,
-        review_type=body.audit_scope if body.agent_type == "qa_auditor" else None,
-        extra_context=body.extra_context,
-        enable_research=body.enable_research
-    ) if body.agent_type != "audit_manager" else agent.audit(
-        raw_data=body.raw_data,
-        audit_period=body.audit_period,
-        tenant_id=body.tenant_id,
-        jurisdiction=body.jurisdiction,
-        audit_type=body.audit_scope,
-        extra_context=body.extra_context,
-        enable_research=body.enable_research
-    )
+        return _phase4d_auto_escalate(result, body.tenant_id, "audit")
+
+    if body.agent_type == "audit_manager":
+        result = agent.audit(
+            raw_data=body.raw_data,
+            audit_period=body.audit_period,
+            tenant_id=body.tenant_id,
+            jurisdiction=body.jurisdiction,
+            audit_type=body.audit_scope,
+            extra_context=body.extra_context,
+            enable_research=body.enable_research
+        )
+    else:
+        result = agent.audit(
+            raw_data=body.raw_data,
+            audit_period=body.audit_period,
+            tenant_id=body.tenant_id,
+            jurisdiction=body.jurisdiction,
+            audit_type=body.audit_scope if body.agent_type == "audit_manager" else None,
+            audit_scope=body.audit_scope if body.agent_type == "compliance_auditor" else None,
+            review_type=body.audit_scope if body.agent_type == "qa_auditor" else None,
+            extra_context=body.extra_context,
+            enable_research=body.enable_research
+        )
+    return _phase4d_auto_escalate(result, body.tenant_id, "audit")
 
 # ---------------------------------------------------------------------------
 # Treasury
@@ -906,7 +1012,7 @@ def treasury_analyze(body: TreasuryAnalyzeRequest, _: dict = Depends(require_per
             logger.warning(f"Market data fetch failed for treasury: {e}")
 
     agent = TREASURY_AGENTS[body.agent_type](API_KEY)
-    return agent.analyze(
+    result = agent.analyze(
         raw_data=body.raw_data,
         period=body.period,
         tenant_id=body.tenant_id,
@@ -916,6 +1022,7 @@ def treasury_analyze(body: TreasuryAnalyzeRequest, _: dict = Depends(require_per
         enable_research=body.enable_research,
         market_data=market_data
     )
+    return _phase4d_auto_escalate(result, body.tenant_id, "treasury")
 
 # ---------------------------------------------------------------------------
 # Corporate Finance
@@ -937,7 +1044,7 @@ def corpfin_analyze(body: CorpFinAnalyzeRequest, _: dict = Depends(require_permi
             logger.warning(f"Market data fetch failed for corpfin: {e}")
 
     agent = CORP_FINANCE_AGENTS[body.agent_type](API_KEY)
-    return agent.analyze(
+    result = agent.analyze(
         raw_data=body.raw_data,
         period=body.period,
         tenant_id=body.tenant_id,
@@ -947,6 +1054,7 @@ def corpfin_analyze(body: CorpFinAnalyzeRequest, _: dict = Depends(require_permi
         enable_research=body.enable_research,
         market_data=market_data
     )
+    return _phase4d_auto_escalate(result, body.tenant_id, "corpfin")
 
 # ---------------------------------------------------------------------------
 # Universal (Phase4Orchestrator)

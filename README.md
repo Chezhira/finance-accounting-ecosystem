@@ -1,6 +1,6 @@
 # Finance & Accounting AI Ecosystem
 
-**Multi-agent, AI-powered finance & accounting system — Sessions 1–12 Complete | v5.3.0**
+**Multi-agent, AI-powered finance & accounting system — Sessions 1–13 Complete | v5.4.0**
 
 > Agents suggest. Humans decide. Nothing posts without approval.
 
@@ -59,7 +59,7 @@ Data enters via email, API webhooks, file uploads, or raw text paste. The system
 | Tax Specialist (US) | ✅ Phase 3 |
 | Tax Compliance Specialist | ✅ Phase 3 |
 | Tax Supervisor | ✅ Session 12 |
-| Tax Strategy Manager | ⬜ Planned |
+| Tax Strategy Manager | ✅ Session 13 |
 
 ### Auditing
 | Agent | Status |
@@ -144,6 +144,8 @@ All raw data is digested as-is. `DataIngestor` handles PDF extraction, OCR fallb
 | POST | `/tax/supervise` | Supervisor review of an existing tax analysis |
 | GET | `/tax/accounting/agents` | List Tax Accountant analysis types |
 | POST | `/tax/accounting/analyze` | Tax Accountant — deferred tax, provisions, reconciliations |
+| GET | `/tax/strategy/agents` | List Tax Strategy analysis types |
+| POST | `/tax/strategy/analyze` | Tax Strategy Manager — planning, structuring, risk register |
 | POST | `/fpa/analyze` | FP&A analysis |
 | POST | `/audit/analyze` | Audit analysis |
 | POST | `/treasury/analyze` | Treasury analysis |
@@ -247,5 +249,6 @@ Register it in `get_adapter()` — no other changes needed anywhere.
 | Session 10 | ✅ Complete | Cost Accountant, Revenue Accountant, Accounting Manager + Market Data |
 | Session 11 | ✅ Complete | Bug fix pass — absolute DB paths, timezone-aware datetimes, request body limits, stats tenant filter, O(1) suggestion lookup |
 | Session 12 | ✅ Complete | Tax Supervisor (ATAX/CPA(T)/EA), Tax Accountant (IAS 12/ASC 740), RBAC documented + activated |
-| Next | ⬜ Planned | Tax Strategy Manager, Phase 4D full escalation wiring |
+| Session 13 | ✅ Complete | Tax Strategy Manager (CTA/LLM Tax), Phase 4D escalation wiring for FP&A, Audit, Treasury & Corp Finance |
+| Next | ⬜ Planned | Dashboard Session 13 tab updates, Phase 4D escalation chain deep review |
 | Long-term | ⬜ Planned | Self-hosted open-source LLM (Claude API abstracted behind interface) |
