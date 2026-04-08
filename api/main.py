@@ -55,6 +55,10 @@ from agents.tax_agent_tz import TaxAgentTZ, TZ_TAX_RULES
 from agents.tax_agent_us import TaxAgentUS, US_TAX_RULES
 from agents.tax_orchestrator import TaxOrchestrator
 
+# Session 12 — Tax Supervisor + Tax Accountant
+from agents.tax_supervisor import TaxSupervisorAgent
+from agents.tax_accountant import TaxAccountantAgent, TAX_ACCOUNTANT_DEFINITIONS
+
 # Phase 4A
 from agents.fpa_agents import (
     FPAAnalystAgent, FPAManagerAgent, SeniorFPAManagerAgent,
@@ -85,13 +89,14 @@ from adapters.market_data_adapter import get_market_data_adapter
 API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 RBAC_ENABLED = os.getenv("RBAC_ENABLED", "false").lower() == "true"
 MARKET_DATA_LIVE = os.getenv("MARKET_DATA_LIVE", "true").lower() == "true"
+TAX_SUPERVISOR_ENABLED = os.getenv("TAX_SUPERVISOR_ENABLED", "true").lower() == "true"
 
 store = OfflineStore()
 esc_store = EscalationStore()          # shared singleton — avoids per-request DB init
 ingestor = DataIngestor()
 market_adapter = get_market_data_adapter(live=MARKET_DATA_LIVE)
 
-app = FastAPI(title="FinOps Ecosystem", version="5.1.0")
+app = FastAPI(title="FinOps Ecosystem", version="5.3.0")
 
 # ---------------------------------------------------------------------------
 # FP&A agent registry (defined here — not exported from fpa_agents.py)
@@ -159,7 +164,7 @@ ACCOUNTING_SPECIALIST_DEFINITIONS = (
 ROLE_PERMISSIONS = {
     "viewer": ["queue"],
     "analyst": ["queue", "fpa", "audit", "treasury", "corpfin", "reports", "ingest", "analyze", "accounting_specialist"],
-    "senior": ["queue", "fpa", "audit", "treasury", "corpfin", "reports", "ingest", "analyze", "accounting_specialist", "escalations"],
+    "senior": ["queue", "fpa", "audit", "treasury", "corpfin", "reports", "ingest", "analyze", "accounting_specialist", "escalations", "tax"],
     "admin": ["queue", "fpa", "audit", "treasury", "corpfin", "reports", "ingest", "analyze", "accounting_specialist", "escalations", "tenants", "tax", "market"],
 }
 ROLE_KEYS = {
@@ -391,7 +396,7 @@ def health():
         "agents": {
             "accounting": ["JuniorAccountant", "SeniorAccountant", "FinancialController",
                            "CostAccountant", "RevenueAccountant", "AccountingManager"],
-            "tax": ["TaxAgentTZ", "TaxAgentUS", "TaxOrchestrator"],
+            "tax": ["TaxAgentTZ", "TaxAgentUS", "TaxOrchestrator", "TaxSupervisorAgent", "TaxAccountantAgent"],
             "fpa": [d["display_name"] for d in FPA_AGENT_DEFINITIONS],
             "audit": [d["display_name"] for d in AUDIT_AGENT_DEFINITIONS],
             "treasury": [d.get("display_name") or d.get("class") or d["agent_type"] for d in TREASURY_AGENT_DEFINITIONS],
@@ -709,6 +714,91 @@ def compute_quarterly_us(body: QuarterlyRequest, _: dict = Depends(require_permi
         "form": "Form 1040-ES",
         "note": "Use actual AGI projection for accuracy. Consult SE tax computation for full picture."
     }
+
+# ---------------------------------------------------------------------------
+# Tax Supervisor + Tax Accountant (Session 12)
+# ---------------------------------------------------------------------------
+
+class TaxSuperviseRequest(BaseModel):
+    tax_analysis: dict                                   # full output from TaxAgentTZ/US
+    tenant_id: str
+    extra_context: str = Field("", max_length=10_000)
+
+class TaxAccountingRequest(BaseModel):
+    raw_data: str = Field(..., max_length=200_000)
+    tenant_id: str
+    jurisdiction: str = "Tanzania"
+    period: Optional[str] = None
+    analysis_type: str = "general_tax_accounting"
+    extra_context: str = Field("", max_length=10_000)
+    enable_research: bool = False
+
+@app.post("/tax/supervise")
+def tax_supervise(body: TaxSuperviseRequest, _: dict = Depends(require_permission("tax"))):
+    """Run a completed tax analysis through the Tax Supervisor for quality review."""
+    supervisor = TaxSupervisorAgent()
+    return supervisor.review(
+        tax_analysis=body.tax_analysis,
+        tenant_id=body.tenant_id,
+        extra_context=body.extra_context,
+    )
+
+@app.post("/tax/analyze/supervised")
+def tax_analyze_supervised(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("tax"))):
+    """Run tax analysis through jurisdiction agent then automatically pass to Tax Supervisor."""
+    orch = TaxOrchestrator()
+    try:
+        tax_result = orch.analyze(
+            raw_input=body.raw_data,
+            tenant_id=body.tenant_id,
+            period=body.period,
+            jurisdiction=body.jurisdiction,
+            extra_context=body.extra_context,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not TAX_SUPERVISOR_ENABLED:
+        tax_result["supervisor_skipped"] = True
+        return tax_result
+
+    supervisor = TaxSupervisorAgent()
+    supervisor_review = supervisor.review(
+        tax_analysis=tax_result,
+        tenant_id=body.tenant_id,
+        extra_context=body.extra_context,
+    )
+    supervisor_review["original_tax_analysis"] = tax_result
+    return supervisor_review
+
+@app.get("/tax/accounting/agents")
+def tax_accounting_agents(_: dict = Depends(require_permission("tax"))):
+    return {"agents": TAX_ACCOUNTANT_DEFINITIONS}
+
+@app.post("/tax/accounting/analyze")
+def tax_accounting_analyze(body: TaxAccountingRequest, _: dict = Depends(require_permission("tax"))):
+    """Tax Accountant — deferred tax, provisions, tax journal entries, reconciliations."""
+    agent = TaxAccountantAgent()
+    result = agent.analyze(
+        raw_input=body.raw_data,
+        tenant_id=body.tenant_id,
+        jurisdiction=body.jurisdiction,
+        period=body.period,
+        analysis_type=body.analysis_type,
+        extra_context=body.extra_context,
+    )
+    # Auto-escalate CRITICAL items into the escalation store
+    if result.get("auto_escalate"):
+        try:
+            esc_id = esc_store.create(
+                tenant_id=body.tenant_id,
+                junior_suggestion=result,
+            )
+            result["escalation_id"] = esc_id
+            result["escalation_message"] = "Auto-escalated due to CRITICAL flag — see escalation queue."
+        except Exception as exc:
+            logger.warning("Tax accounting auto-escalation failed: %s", exc)
+    return result
 
 # ---------------------------------------------------------------------------
 # FP&A

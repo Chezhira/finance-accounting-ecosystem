@@ -1,6 +1,6 @@
 # Finance & Accounting AI Ecosystem
 
-**Multi-agent, AI-powered finance & accounting system — Sessions 1–11 Complete | v5.2.0**
+**Multi-agent, AI-powered finance & accounting system — Sessions 1–12 Complete | v5.3.0**
 
 > Agents suggest. Humans decide. Nothing posts without approval.
 
@@ -41,7 +41,7 @@ Data enters via email, API webhooks, file uploads, or raw text paste. The system
 | Revenue Accountant | ✅ Session 10 |
 | Cost Accountant | ✅ Session 10 |
 | Accounting Manager | ✅ Session 10 |
-| Tax Accountant | ⬜ Planned |
+| Tax Accountant | ✅ Session 12 |
 
 ### FP&A
 | Agent | Status |
@@ -58,7 +58,8 @@ Data enters via email, API webhooks, file uploads, or raw text paste. The system
 | Tax Specialist (TZ) | ✅ Phase 3 |
 | Tax Specialist (US) | ✅ Phase 3 |
 | Tax Compliance Specialist | ✅ Phase 3 |
-| Tax Supervisor / Strategy Manager | ⬜ Planned |
+| Tax Supervisor | ✅ Session 12 |
+| Tax Strategy Manager | ⬜ Planned |
 
 ### Auditing
 | Agent | Status |
@@ -139,6 +140,10 @@ All raw data is digested as-is. `DataIngestor` handles PDF extraction, OCR fallb
 | GET | `/stats/{tenant_id}` | Dashboard stats |
 | POST | `/sync` | Manual Postgres sync |
 | POST | `/tax/analyze` | Tax analysis (TZ / US) |
+| POST | `/tax/analyze/supervised` | Tax analysis + automatic supervisor review |
+| POST | `/tax/supervise` | Supervisor review of an existing tax analysis |
+| GET | `/tax/accounting/agents` | List Tax Accountant analysis types |
+| POST | `/tax/accounting/analyze` | Tax Accountant — deferred tax, provisions, reconciliations |
 | POST | `/fpa/analyze` | FP&A analysis |
 | POST | `/audit/analyze` | Audit analysis |
 | POST | `/treasury/analyze` | Treasury analysis |
@@ -241,5 +246,6 @@ Register it in `get_adapter()` — no other changes needed anywhere.
 | 4C | ✅ Complete | Universal Phase4Orchestrator (L1/L2 routing) |
 | Session 10 | ✅ Complete | Cost Accountant, Revenue Accountant, Accounting Manager + Market Data |
 | Session 11 | ✅ Complete | Bug fix pass — absolute DB paths, timezone-aware datetimes, request body limits, stats tenant filter, O(1) suggestion lookup |
-| Next | ⬜ Planned | Tax Accountant, Tax Supervisor, Phase 4D full escalation wiring, RBAC |
+| Session 12 | ✅ Complete | Tax Supervisor (ATAX/CPA(T)/EA), Tax Accountant (IAS 12/ASC 740), RBAC documented + activated |
+| Next | ⬜ Planned | Tax Strategy Manager, Phase 4D full escalation wiring |
 | Long-term | ⬜ Planned | Self-hosted open-source LLM (Claude API abstracted behind interface) |
