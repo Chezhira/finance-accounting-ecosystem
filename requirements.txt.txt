@@ -13,7 +13,7 @@ psycopg2-binary>=2.9.9           # PostgreSQL (production)
 aiosqlite>=0.20.0                # async SQLite (offline mode)
 
 # ── AI / LLM ──────────────────────────────────────────────────────────────────
-anthropic>=0.25.0                # Claude API
+anthropic>=0.96.0                # Claude API — claude-sonnet-4-6 / claude-opus-4-6
 
 # ── PDF handling ───────────────────────────────────────────────────────────────
 pdfplumber>=0.10.0               # text-layer PDF extraction (Phase 1)

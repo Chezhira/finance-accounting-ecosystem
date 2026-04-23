@@ -1,5 +1,5 @@
 # FinOps Ecosystem — Python Dependencies
-# Last updated: Session 5 (OCR Support)
+# Last updated: Session 13 / April 2026 — agents on claude-sonnet-4-6
 # Install: pip install -r requirements.txt
 
 # ── Web framework ──────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ psycopg2-binary>=2.9.9           # PostgreSQL (production)
 aiosqlite>=0.20.0                # async SQLite (offline mode)
 
 # ── AI / LLM ──────────────────────────────────────────────────────────────────
-anthropic>=0.25.0                # Claude API
+anthropic>=0.96.0                # Claude API — claude-sonnet-4-6 / claude-opus-4-6
 
 # ── PDF handling ───────────────────────────────────────────────────────────────
 pdfplumber>=0.10.0               # text-layer PDF extraction (Phase 1)
