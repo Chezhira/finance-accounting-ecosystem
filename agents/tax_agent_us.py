@@ -252,7 +252,7 @@ class TaxAgentUS:
 
     def __init__(self):
         self.client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-        self.model = "claude-sonnet-4-5"     # Sonnet for core tax work
+        self.model = "claude-sonnet-4-6"     # Sonnet for core tax work
         self.rules = US_TAX_RULES
         self.today = date.today().isoformat()
 

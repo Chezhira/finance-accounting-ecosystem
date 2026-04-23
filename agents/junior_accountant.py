@@ -302,7 +302,7 @@ class JuniorAccountantAgent:
         jurisdiction: str,
         escalation_threshold_tzs: float = 5_000_000,
         escalation_threshold_usd: float = 2_000,
-        model: str = "claude-sonnet-4-5",
+        model: str = "claude-sonnet-4-6",
     ):
         self.client = Anthropic()
         self.tenant_id = tenant_id

@@ -178,7 +178,7 @@ class FPAAnalystAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def analyze(
@@ -364,7 +364,7 @@ class FPAManagerAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def analyze(
@@ -540,7 +540,7 @@ class SeniorFPAManagerAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def analyze(
@@ -717,7 +717,7 @@ class VPFinanceAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def analyze(
@@ -907,7 +907,7 @@ class DataAnalystAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def analyze(

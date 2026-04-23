@@ -175,7 +175,7 @@ class FinancialControllerAgent:
 
     def __init__(self, api_key: Optional[str] = None):
         self.client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.agent_name = "Financial Controller"
 
     def review(

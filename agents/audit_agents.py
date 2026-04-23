@@ -213,7 +213,7 @@ class ComplianceAuditorAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def audit(
@@ -420,7 +420,7 @@ class AuditManagerAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def audit(
@@ -642,7 +642,7 @@ class QAAuditorAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def audit(
@@ -867,7 +867,7 @@ class ForensicAuditorAgent:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-5"
+        self.model = "claude-sonnet-4-6"
         self.max_tokens = 16000
 
     def investigate(

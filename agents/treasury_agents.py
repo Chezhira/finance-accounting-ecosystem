@@ -35,7 +35,7 @@ import anthropic
 # Shared helpers
 # ---------------------------------------------------------------------------
 
-_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 _MAX_TOKENS = 16000
 
 # Sandbox market data — all flagged as ESTIMATE in agent outputs

@@ -169,7 +169,7 @@ class SeniorAccountantAgent:
 
     def __init__(self, api_key: Optional[str] = None):
         self.client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
-        self.model = "claude-sonnet-4-5"  # Core work model
+        self.model = "claude-sonnet-4-6"  # Core work model
         self.agent_name = "Senior Accountant"
 
     def review(

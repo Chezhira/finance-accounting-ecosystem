@@ -32,7 +32,7 @@ import anthropic
 # Shared helpers (mirrors treasury_agents.py pattern)
 # ---------------------------------------------------------------------------
 
-_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 _MAX_TOKENS = 16000
 
 # Sandbox valuation and market data — all flagged ESTIMATE in agent outputs
