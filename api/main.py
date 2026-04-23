@@ -519,6 +519,40 @@ def detect_tenant(body: IngestText, _: dict = Depends(require_permission("ingest
     return {"detected_tenant": None, "confidence": "none", "suggestion": "Create a new tenant or specify manually"}
 
 # ---------------------------------------------------------------------------
+# Mersi Health Check
+# ---------------------------------------------------------------------------
+@app.post("/mersi/health-check")
+def mersi_health_check(
+    period: Optional[str] = None,
+    qbo_mode: str = "mock",
+    fishbowl_mode: str = "mock",
+    _: dict = Depends(require_permission("audit"))
+):
+    """
+    Run the Mersi finance health check — pulls from QBO + Fishbowl,
+    runs all reconciliation and integrity checks, returns structured findings.
+
+    period:         YYYY-MM (defaults to current month)
+    qbo_mode:       "mock" | "quickbooks" (use "quickbooks" when credentials are configured)
+    fishbowl_mode:  "mock" | "live" (use "live" when Fishbowl credentials are configured)
+    """
+    from audits.mersi_health_check import MersiHealthCheck
+    checker = MersiHealthCheck(qbo_mode=qbo_mode, fishbowl_mode=fishbowl_mode)
+    report = checker.run(period=period)
+    return report.to_dict()
+
+@app.get("/mersi/health-check/latest")
+def mersi_health_check_get(
+    period: Optional[str] = None,
+    _: dict = Depends(require_permission("audit"))
+):
+    """GET convenience wrapper — runs health check with mock data."""
+    from audits.mersi_health_check import MersiHealthCheck
+    checker = MersiHealthCheck()
+    report = checker.run(period=period)
+    return report.to_dict()
+
+# ---------------------------------------------------------------------------
 # Ingestion
 # ---------------------------------------------------------------------------
 @app.post("/ingest/text")

@@ -171,6 +171,164 @@ class QuickBooksAdapter(AccountingAdapter):
         except Exception:
             return None
 
+    # ── DATA PULL METHODS (for reconciliation and audit checks) ───────────────
+
+    def get_account_balance(self, account_code: str) -> float:
+        """Fetch the current balance of a specific GL account by account number."""
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/query"
+            query = f"SELECT * FROM Account WHERE AcctNum = '{account_code}'"
+            resp = requests.get(url, headers=self._headers(), params={"query": query}, timeout=15)
+            resp.raise_for_status()
+            accounts = resp.json().get("QueryResponse", {}).get("Account", [])
+            if accounts:
+                return float(accounts[0].get("CurrentBalance", 0))
+            return 0.0
+        except Exception as e:
+            logger.error(f"[QBO] get_account_balance failed: {e}")
+            return 0.0
+
+    def get_ar_aging(self) -> dict:
+        """
+        Fetch AR aging report from QBO Reports API.
+        Returns buckets: current, 1-30, 31-60, 61-90, 90+, total
+        """
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/reports/AgedReceivables"
+            resp = requests.get(url, headers=self._headers(), timeout=15)
+            resp.raise_for_status()
+            return self._parse_aging_report(resp.json())
+        except Exception as e:
+            logger.error(f"[QBO] get_ar_aging failed: {e}")
+            return {}
+
+    def get_ap_aging(self) -> dict:
+        """
+        Fetch AP aging report from QBO Reports API.
+        Returns buckets: current, 1-30, 31-60, 61-90, 90+, total
+        """
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/reports/AgedPayables"
+            resp = requests.get(url, headers=self._headers(), timeout=15)
+            resp.raise_for_status()
+            return self._parse_aging_report(resp.json())
+        except Exception as e:
+            logger.error(f"[QBO] get_ap_aging failed: {e}")
+            return {}
+
+    def get_trial_balance(self) -> list[dict]:
+        """
+        Fetch trial balance from QBO Reports API.
+        Returns list of {account, code, type, debit, credit, balance}
+        """
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/reports/TrialBalance"
+            resp = requests.get(url, headers=self._headers(), timeout=15)
+            resp.raise_for_status()
+            return self._parse_trial_balance(resp.json())
+        except Exception as e:
+            logger.error(f"[QBO] get_trial_balance failed: {e}")
+            return []
+
+    def get_open_invoices(self, customer_name: Optional[str] = None) -> list[dict]:
+        """
+        Fetch open (unpaid) invoices. Optionally filter by customer.
+        Returns list of {invoice_id, customer, date, due_date, amount, balance, ref}
+        Used for SouthStar factoring eligibility checks.
+        """
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/query"
+            query = "SELECT * FROM Invoice WHERE Balance > '0' MAXRESULTS 1000"
+            if customer_name:
+                query = f"SELECT * FROM Invoice WHERE CustomerRef IN (SELECT Id FROM Customer WHERE DisplayName LIKE '%{customer_name}%') AND Balance > '0' MAXRESULTS 200"
+            resp = requests.get(url, headers=self._headers(), params={"query": query}, timeout=15)
+            resp.raise_for_status()
+            invoices = resp.json().get("QueryResponse", {}).get("Invoice", [])
+            return [
+                {
+                    "invoice_id": inv["Id"],
+                    "customer": inv.get("CustomerRef", {}).get("name", ""),
+                    "date": inv.get("TxnDate", ""),
+                    "due_date": inv.get("DueDate", ""),
+                    "amount": float(inv.get("TotalAmt", 0)),
+                    "balance": float(inv.get("Balance", 0)),
+                    "ref": inv.get("DocNumber", ""),
+                }
+                for inv in invoices
+            ]
+        except Exception as e:
+            logger.error(f"[QBO] get_open_invoices failed: {e}")
+            return []
+
+    def get_cogs_balance(self, from_date: str, to_date: str) -> float:
+        """
+        Fetch total COGS posted in QBO for a date range.
+        Used to reconcile against Fishbowl COGS.
+        """
+        try:
+            import requests
+            url = f"{self.BASE_URL}/company/{self.realm_id}/reports/ProfitAndLoss"
+            resp = requests.get(
+                url, headers=self._headers(),
+                params={"start_date": from_date, "end_date": to_date},
+                timeout=15
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            # Parse COGS line from P&L report
+            for row in data.get("Rows", {}).get("Row", []):
+                if row.get("group") == "CostOfGoodsSold":
+                    for col in row.get("Summary", {}).get("ColData", []):
+                        try:
+                            val = float(col.get("value", 0))
+                            if val != 0:
+                                return val
+                        except (ValueError, TypeError):
+                            pass
+            return 0.0
+        except Exception as e:
+            logger.error(f"[QBO] get_cogs_balance failed: {e}")
+            return 0.0
+
+    def _parse_aging_report(self, data: dict) -> dict:
+        """Parse QBO aging report JSON into simple bucket dict."""
+        result = {"current": 0, "1_30": 0, "31_60": 0, "61_90": 0, "over_90": 0, "total": 0}
+        try:
+            rows = data.get("Rows", {}).get("Row", [])
+            for row in rows:
+                cols = row.get("Summary", {}).get("ColData", [])
+                if len(cols) >= 6:
+                    result["current"] += float(cols[1].get("value", 0) or 0)
+                    result["1_30"]    += float(cols[2].get("value", 0) or 0)
+                    result["31_60"]   += float(cols[3].get("value", 0) or 0)
+                    result["61_90"]   += float(cols[4].get("value", 0) or 0)
+                    result["over_90"] += float(cols[5].get("value", 0) or 0)
+            result["total"] = sum(v for k, v in result.items() if k != "total")
+        except Exception:
+            pass
+        return result
+
+    def _parse_trial_balance(self, data: dict) -> list[dict]:
+        """Parse QBO trial balance report into list of account dicts."""
+        accounts = []
+        try:
+            for row in data.get("Rows", {}).get("Row", []):
+                cols = row.get("ColData", [])
+                if len(cols) >= 3:
+                    accounts.append({
+                        "account": cols[0].get("value", ""),
+                        "debit": float(cols[1].get("value", 0) or 0),
+                        "credit": float(cols[2].get("value", 0) or 0),
+                    })
+        except Exception:
+            pass
+        return accounts
+
 
 # ─────────────────────────────────────────────
 # MOCK ADAPTER (for testing / offline mode)
@@ -223,6 +381,72 @@ class MockAdapter(AccountingAdapter):
 
     def get_vendor(self, vendor_name: str, tenant_id: str) -> Optional[dict]:
         return {"id": "V001", "name": vendor_name, "email": "", "terms": "Net 30"}
+
+    def get_account_balance(self, account_code: str) -> float:
+        # Simulate QBO 1200 Inventory balance — intentionally slightly off from
+        # Fishbowl total to trigger the sync discrepancy check
+        mock_balances = {
+            "1200": 27_456.00,   # Fishbowl total (excl. manual) = 27,189.00 → gap of $267
+            "1100": 48_320.00,
+            "2000": 21_840.00,
+        }
+        return mock_balances.get(account_code, 0.0)
+
+    def get_ar_aging(self) -> dict:
+        return {
+            "current": 18_400.00,
+            "1_30":    15_200.00,
+            "31_60":    8_750.00,
+            "61_90":    3_200.00,
+            "over_90":  2_770.00,
+            "total":   48_320.00,
+        }
+
+    def get_ap_aging(self) -> dict:
+        return {
+            "current":  8_400.00,
+            "1_30":     7_200.00,
+            "31_60":    4_240.00,
+            "61_90":    1_500.00,
+            "over_90":    500.00,
+            "total":   21_840.00,
+        }
+
+    def get_trial_balance(self) -> list[dict]:
+        return [
+            {"account": "Cash — Operating Account",  "debit": 24_800.00, "credit": 0},
+            {"account": "Accounts Receivable",        "debit": 48_320.00, "credit": 0},
+            {"account": "Factoring Reserve Account",  "debit":  4_200.00, "credit": 0},
+            {"account": "Inventory",                  "debit": 27_456.00, "credit": 0},
+            {"account": "Accounts Payable",           "debit": 0, "credit": 21_840.00},
+            {"account": "Loans Payable",              "debit": 0, "credit": 35_000.00},
+            {"account": "Product Sales Revenue",      "debit": 0, "credit": 94_200.00},
+            {"account": "Cost of Goods Sold",         "debit": 38_200.00, "credit": 0},
+            {"account": "Contract Labor",             "debit":  6_400.00, "credit": 0},
+            {"account": "Software & Subscriptions",   "debit":  1_240.00, "credit": 0},
+            {"account": "Factoring Fees",             "debit":  1_884.00, "credit": 0},
+        ]
+
+    def get_open_invoices(self, customer_name: Optional[str] = None) -> list[dict]:
+        invoices = [
+            {"invoice_id": "INV-201", "customer": "Sunrise Senior Living",
+             "date": "2026-04-18", "due_date": "2026-05-18",
+             "amount": 1_840.00, "balance": 1_840.00, "ref": "INV-2026-201"},
+            {"invoice_id": "INV-202", "customer": "Brookdale Senior Living",
+             "date": "2026-04-19", "due_date": "2026-05-19",
+             "amount": 3_200.00, "balance": 3_200.00, "ref": "INV-2026-202"},
+            # Invoiced but not yet shipped — ASC 606 risk (matches Fishbowl mock)
+            {"invoice_id": "INV-205", "customer": "Atria Senior Living",
+             "date": "2026-04-21", "due_date": "2026-05-21",
+             "amount": 2_650.00, "balance": 2_650.00, "ref": "INV-2026-205"},
+        ]
+        if customer_name:
+            invoices = [i for i in invoices if customer_name.lower() in i["customer"].lower()]
+        return invoices
+
+    def get_cogs_balance(self, from_date: str, to_date: str) -> float:
+        # Mock QBO COGS — intentionally slightly different from Fishbowl ($250 gap)
+        return 38_200.00
 
 
 # ─────────────────────────────────────────────
