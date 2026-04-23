@@ -86,6 +86,23 @@ DEFAULT_TENANTS = [
         "currency": "USD",
         "notes": "US family-owned LLC — pass-through taxation",
     },
+    {
+        "id": "mersi_us",
+        "display_name": "Mersi Distribution LLC",
+        "jurisdiction": "US",
+        "accounting_standard": "US_GAAP",
+        "country": "United States",
+        "currency": "USD",
+        "notes": (
+            "US medical supplies distributor, Miami FL. "
+            "Sells to senior living homes. "
+            "Systems: Fishbowl (inventory), QuickBooks Online (GL), "
+            "Bill.com (AP payments), SouthStar (AR factoring — 80% advance, 2% fee, Tuesday cycle), "
+            "Deel (contractor payments), Slack (internal comms). "
+            "Outsourced bookkeeper: Nirmit's firm (~80-90 hrs/week). "
+            "Key contacts: Faris (CEO), Intan (procurement), Zahidah (finance lead)."
+        ),
+    },
 ]
 
 
@@ -106,21 +123,20 @@ class OfflineStore:
         self._seed_tenants()
 
     def _seed_tenants(self):
-        """Add default tenants if none exist."""
+        """Upsert default tenants on every startup — new tenants in DEFAULT_TENANTS
+        are always added; existing tenants are left unchanged (INSERT OR IGNORE)."""
+        now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
-            count = conn.execute("SELECT COUNT(*) FROM tenants").fetchone()[0]
-            if count == 0:
-                now = datetime.now(timezone.utc).isoformat()
-                for t in DEFAULT_TENANTS:
-                    conn.execute(
-                        """INSERT OR IGNORE INTO tenants
-                           (id, display_name, jurisdiction, accounting_standard,
-                            country, currency, notes, created_at, updated_at)
-                           VALUES (?,?,?,?,?,?,?,?,?)""",
-                        (t["id"], t["display_name"], t["jurisdiction"],
-                         t["accounting_standard"], t["country"], t["currency"],
-                         t.get("notes", ""), now, now)
-                    )
+            for t in DEFAULT_TENANTS:
+                conn.execute(
+                    """INSERT OR IGNORE INTO tenants
+                       (id, display_name, jurisdiction, accounting_standard,
+                        country, currency, notes, created_at, updated_at)
+                       VALUES (?,?,?,?,?,?,?,?,?)""",
+                    (t["id"], t["display_name"], t["jurisdiction"],
+                     t["accounting_standard"], t["country"], t["currency"],
+                     t.get("notes", ""), now, now)
+                )
 
     # ── TENANT MANAGEMENT ──────────────────────
 
