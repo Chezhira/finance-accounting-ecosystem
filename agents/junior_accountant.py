@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 from typing import Optional
 from anthropic import Anthropic
+from config.tenant_contexts.loader import load_tenant_context
 
 JUNIOR_ACCOUNTANT_SYSTEM_PROMPT = """
 You are an AI-powered Junior Accountant operating within a multi-agent Finance & Accounting ecosystem.
@@ -311,6 +312,8 @@ class JuniorAccountantAgent:
         self.escalation_threshold_usd = escalation_threshold_usd
         self.model = model
         self.conversation_history = []
+        # Auto-load tenant-specific context (vendor rules, CoA, decision logic)
+        self._tenant_context = load_tenant_context(tenant_id) or ""
 
     def _build_user_message(self, raw_input: str, source: str, extra_context: str = "") -> str:
         threshold = (
@@ -318,15 +321,21 @@ class JuniorAccountantAgent:
             if self.jurisdiction == "TZ"
             else f"USD {self.escalation_threshold_usd:,.0f}"
         )
+        tenant_context_block = (
+            f"\n{self._tenant_context}\n"
+            if self._tenant_context else ""
+        )
+        extra_context_block = (
+            f"ADDITIONAL CONTEXT FROM OPERATOR: {extra_context}\n"
+            if extra_context else ""
+        )
         return f"""
 TENANT: {self.tenant_id}
 JURISDICTION: {self.jurisdiction}
 DATA SOURCE: {source}
 TIMESTAMP: {datetime.utcnow().isoformat()}
 ESCALATION THRESHOLD: {threshold}
-
-{"ADDITIONAL CONTEXT: " + extra_context if extra_context else ""}
-
+{tenant_context_block}{extra_context_block}
 RAW INPUT DATA:
 ─────────────────────────────────────────
 {raw_input}
@@ -334,11 +343,12 @@ RAW INPUT DATA:
 
 Instructions:
 1. Parse and classify this document.
-2. Auto-correct any data errors (geographic, mathematical, formatting) and flag them as CRITICAL.
-3. Apply the correct accounting standard for this jurisdiction.
-4. Construct the journal entry following the mandatory journal entry rules in your system prompt.
-5. VERIFY the journal balances (total DR = total CR) before writing your response.
-6. Output ONLY a valid JSON object matching the required schema. No other text.
+2. Apply all tenant-specific vendor rules and decision logic from the tenant context above.
+3. Auto-correct any data errors (geographic, mathematical, formatting) and flag them as CRITICAL.
+4. Apply the correct accounting standard for this jurisdiction.
+5. Construct the journal entry following the mandatory journal entry rules in your system prompt.
+6. VERIFY the journal balances (total DR = total CR) before writing your response.
+7. Output ONLY a valid JSON object matching the required schema. No other text.
 """
 
     def process(
