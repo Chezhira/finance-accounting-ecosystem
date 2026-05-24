@@ -10,6 +10,7 @@ Session 6 upgrades:
   - reports/ folder auto-created at startup (Rule 20)
 """
 
+import json
 import os
 import uuid
 import logging
@@ -114,7 +115,6 @@ class EscalationStore:
     def create(self, tenant_id: str, junior_suggestion: dict) -> str:
         esc_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
-        import json
         reasoning_log = json.dumps([{
             "stage": "JUNIOR_COMPLETE",
             "timestamp": now,
@@ -133,7 +133,6 @@ class EscalationStore:
         return esc_id
 
     def get(self, esc_id: str) -> Optional[dict]:
-        import json
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT * FROM escalations WHERE id = ?", (esc_id,)
@@ -163,7 +162,6 @@ class EscalationStore:
     })
 
     def update_state(self, esc_id: str, state: str, **kwargs):
-        import json
         now = datetime.now(timezone.utc).isoformat()
         fields = ["state = ?", "updated_at = ?"]
         values = [state, now]
@@ -189,7 +187,6 @@ class EscalationStore:
 
     def append_reasoning(self, esc_id: str, stage: str, summary: str, detail: str = ""):
         """Append an entry to the reasoning_log for this escalation."""
-        import json
         esc = self.get(esc_id)
         if not esc:
             return
@@ -224,7 +221,6 @@ class EscalationStore:
         return self.get(esc_id)["senior_retry_count"]
 
     def list_all(self) -> list:
-        import json
         with self._conn() as conn:
             rows = conn.execute(
                 "SELECT * FROM escalations ORDER BY updated_at DESC"
@@ -362,7 +358,6 @@ def _build_critique_context(
 
     This prevents the LLM from producing an identical answer on retry.
     """
-    import json
 
     previous_output_summary = ""
     if isinstance(failed_suggestion, dict):
@@ -580,7 +575,10 @@ class EscalationEngine:
             reason = senior_review.get("notes", "Critical issue flagged by Senior Accountant")
             self.store.update_state(esc_id, EscalationState.FLAGGED_CRITICAL)
             self.store.append_reasoning(esc_id, "FLAGGED_CRITICAL", reason[:300])
-            self.emailer.notify_critical(esc_id, tenant_id, reason)
+            try:
+                self.emailer.notify_critical(esc_id, tenant_id, reason)
+            except Exception as _e:
+                logger.warning(f"notify_critical failed: {_e}")
             return
 
         elif decision == "RETURN_TO_JUNIOR":
@@ -591,7 +589,10 @@ class EscalationEngine:
                     esc_id, "MAX_RETRIES_EXCEEDED",
                     f"Junior exceeded {MAX_JUNIOR_RETRIES} retries. Manual intervention required."
                 )
-                self.emailer.notify_max_retries(esc_id, tenant_id, "Junior Accountant")
+                try:
+                    self.emailer.notify_max_retries(esc_id, tenant_id, "Junior Accountant")
+                except Exception as _e:
+                    logger.warning(f"notify_max_retries failed: {_e}")
                 return
 
             # ── Session 6: Critique injection ──────────────────────────────
@@ -685,7 +686,10 @@ class EscalationEngine:
                     esc_id, "MAX_RETRIES_EXCEEDED",
                     f"Senior exceeded {MAX_SENIOR_RETRIES} retries from Controller. Manual intervention required."
                 )
-                self.emailer.notify_max_retries(esc_id, tenant_id, "Senior Accountant")
+                try:
+                    self.emailer.notify_max_retries(esc_id, tenant_id, "Senior Accountant")
+                except Exception as _e:
+                    logger.warning(f"notify_max_retries failed: {_e}")
                 return
 
             # ── Session 6: Critique injection for Senior retry ─────────────
@@ -729,7 +733,10 @@ class EscalationEngine:
             )
 
             controller_summary = controller_review.get("notes", controller_review.get("summary", ""))
-            self.emailer.notify_pending_human(esc_id, tenant_id, controller_summary)
+            try:
+                self.emailer.notify_pending_human(esc_id, tenant_id, controller_summary)
+            except Exception as _e:
+                logger.warning(f"notify_pending_human failed: {_e}")
 
     def _run_human_decision(
         self,
@@ -792,7 +799,7 @@ class EscalationEngine:
             je = suggestion_to_journal_entry(junior_suggestion, tenant_id)
             result = self.adapter.push_journal_entry(je)
 
-            system_ref = getattr(result, "reference", None) or str(result) or "posted"
+            system_ref = result.get("system_id") or result.get("reference") or "posted"
             self.store.update_state(
                 escalation_id, EscalationState.POSTED,
                 system_reference=system_ref
@@ -801,7 +808,10 @@ class EscalationEngine:
                 escalation_id, "POSTED",
                 f"Successfully posted. System reference: {system_ref}"
             )
-            self.emailer.notify_posted(escalation_id, tenant_id, system_ref)
+            try:
+                self.emailer.notify_posted(escalation_id, tenant_id, system_ref)
+            except Exception as _e:
+                logger.warning(f"notify_posted failed: {_e}")
             logger.info(f"[Escalation {escalation_id[:8]}] Posted. Ref: {system_ref}")
 
         except Exception as e:

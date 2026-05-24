@@ -1,5 +1,5 @@
-"""
-FinOps Ecosystem API — v5.1.0
+﻿"""
+FinOps Ecosystem API â€” v5.1.0
 Session 10: + CostAccountant, RevenueAccountant, AccountingManager agents
            + LiveMarketDataAdapter (/market/rates, ?include_market_data= flag)
 All previous routes preserved exactly.
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Absolute paths — safe regardless of working directory at launch
+# Absolute paths â€” safe regardless of working directory at launch
 _HERE = Path(__file__).parent          # api/
 _ROOT = _HERE.parent                   # finops/
 REPORTS_DIR = _ROOT / "reports"
@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Imports — all agents and adapters
+# Imports â€” all agents and adapters
 # ---------------------------------------------------------------------------
 from db.store import OfflineStore
 from ingestion.ingestor import DataIngestor
@@ -55,7 +55,7 @@ from agents.tax_agent_tz import TaxAgentTZ, TZ_TAX_RULES
 from agents.tax_agent_us import TaxAgentUS, US_TAX_RULES
 from agents.tax_orchestrator import TaxOrchestrator
 
-# Session 12 — Tax Supervisor + Tax Accountant + Tax Strategy Manager
+# Session 12 â€” Tax Supervisor + Tax Accountant + Tax Strategy Manager
 from agents.tax_supervisor import TaxSupervisorAgent
 from agents.tax_accountant import TaxAccountantAgent, TAX_ACCOUNTANT_DEFINITIONS
 from agents.tax_strategy_manager import TaxStrategyManagerAgent, TAX_STRATEGY_DEFINITIONS
@@ -76,12 +76,12 @@ from agents.corp_finance_agents import CORP_FINANCE_AGENTS, CORP_FINANCE_AGENT_D
 # Phase 4C
 from agents.phase4_orchestrator import Phase4Orchestrator
 
-# Session 10 — new agents
+# Session 10 â€” new agents
 from agents.cost_accountant import CostAccountantAgent, COST_AGENT_DEFINITIONS
 from agents.revenue_accountant import RevenueAccountantAgent, REVENUE_AGENT_DEFINITIONS
 from agents.accounting_manager import AccountingManagerAgent, ACCOUNTING_MANAGER_DEFINITIONS
 
-# Session 10 — market data adapter
+# Session 10 â€” market data adapter
 from adapters.market_data_adapter import get_market_data_adapter
 
 # ---------------------------------------------------------------------------
@@ -93,14 +93,14 @@ MARKET_DATA_LIVE = os.getenv("MARKET_DATA_LIVE", "true").lower() == "true"
 TAX_SUPERVISOR_ENABLED = os.getenv("TAX_SUPERVISOR_ENABLED", "true").lower() == "true"
 
 store = OfflineStore()
-esc_store = EscalationStore()          # shared singleton — avoids per-request DB init
+esc_store = EscalationStore()          # shared singleton â€” avoids per-request DB init
 ingestor = DataIngestor()
 market_adapter = get_market_data_adapter(live=MARKET_DATA_LIVE)
 
 app = FastAPI(title="FinOps Ecosystem", version="5.4.0")
 
 # ---------------------------------------------------------------------------
-# FP&A agent registry (defined here — not exported from fpa_agents.py)
+# FP&A agent registry (defined here â€” not exported from fpa_agents.py)
 # ---------------------------------------------------------------------------
 FPA_AGENTS = {
     "fpa_analyst": lambda: FPAAnalystAgent(API_KEY),
@@ -149,7 +149,7 @@ AUDIT_AGENT_DEFINITIONS = [
      "supported_analysis_types": ["fraud", "benfords", "asset_trace", "aml", "sar", "adhoc"]},
 ]
 
-# Session 10 — accounting specialist registry
+# Session 10 â€” accounting specialist registry
 ACCOUNTING_SPECIALIST_AGENTS = {
     "cost_accountant": lambda: CostAccountantAgent(API_KEY),
     "revenue_accountant": lambda: RevenueAccountantAgent(API_KEY),
@@ -175,7 +175,7 @@ ROLE_KEYS = {
     "admin": os.getenv("RBAC_KEY_ADMIN", ""),
 }
 
-def get_current_role(x_api_key: Optional[str] = Header(None)) -> dict:
+def get_current_role(x_api_key: Optional[str] = Header(None)):
     if not RBAC_ENABLED:
         return {"role": "admin", "permissions": ROLE_PERMISSIONS["admin"]}
     for role, key in ROLE_KEYS.items():
@@ -184,15 +184,16 @@ def get_current_role(x_api_key: Optional[str] = Header(None)) -> dict:
     raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 def require_permission(permission: str):
-    def checker(role_info: dict = Depends(get_current_role)):
+    def checker(role_info=Depends(get_current_role)):
         if permission not in role_info["permissions"]:
             raise HTTPException(status_code=403, detail=f"Permission '{permission}' required")
         return role_info
+    return checker
 
 # ---------------------------------------------------------------------------
-# Phase 4D — Shared escalation helper
+# Phase 4D â€” Shared escalation helper
 # ---------------------------------------------------------------------------
-def _phase4d_auto_escalate(result: dict, tenant_id: str, department: str) -> dict:
+def _phase4d_auto_escalate(result: dict, tenant_id: str, department: str):
     """
     Phase 4D: Auto-escalate CRITICAL findings from FP&A, Audit, Treasury,
     and Corp Finance departments into the EscalationStore.
@@ -232,7 +233,7 @@ def _phase4d_auto_escalate(result: dict, tenant_id: str, department: str) -> dic
             junior_suggestion={
                 **result,
                 "_department": department,
-                "_escalation_reason": "Phase 4D auto-escalation — CRITICAL finding detected",
+                "_escalation_reason": "Phase 4D auto-escalation â€” CRITICAL finding detected",
             },
         )
         result["escalation_id"] = esc_id
@@ -241,14 +242,13 @@ def _phase4d_auto_escalate(result: dict, tenant_id: str, department: str) -> dic
             f"CRITICAL finding auto-escalated to review queue. "
             f"Escalation ID: {esc_id}. See /escalations tab."
         )
-        logger.info("Phase 4D auto-escalation — dept=%s tenant=%s esc_id=%s", department, tenant_id, esc_id)
+        logger.info("Phase 4D auto-escalation â€” dept=%s tenant=%s esc_id=%s", department, tenant_id, esc_id)
     except Exception as exc:
-        logger.warning("Phase 4D auto-escalation failed — dept=%s error=%s", department, exc)
+        logger.warning("Phase 4D auto-escalation failed â€” dept=%s error=%s", department, exc)
         result["escalation_status"] = "escalation_failed"
         result["escalation_error"] = str(exc)
 
     return result
-    return checker
 
 # ---------------------------------------------------------------------------
 # Escalation engine factory
@@ -373,7 +373,7 @@ class UniversalAnalyzeRequest(BaseModel):
 class ResubmitRequest(BaseModel):
     operator_context: str = Field(..., max_length=10_000)
 
-# Session 10 — new request models
+# Session 10 â€” new request models
 class AccountingSpecialistRequest(BaseModel):
     raw_data: str = Field(..., max_length=200_000)
     tenant_id: str
@@ -435,7 +435,7 @@ def _handle_accounting_specialist_escalation(result: dict, tenant_id: str):
                 "full_result": result,
             }
         )
-        logger.warning(f"Auto-escalated {agent_name} CRITICAL finding — esc_id={esc_id}")
+        logger.warning(f"Auto-escalated {agent_name} CRITICAL finding â€” esc_id={esc_id}")
         return esc_id
     except Exception as e:
         logger.error(f"Auto-escalation failed: {e}")
@@ -469,7 +469,7 @@ def health():
     }
 
 @app.get("/auth/role")
-def get_role(role_info: dict = Depends(get_current_role)):
+def get_role(role_info=Depends(get_current_role)):
     return role_info
 
 # ---------------------------------------------------------------------------
@@ -487,11 +487,11 @@ def dashboard():
 # Tenants
 # ---------------------------------------------------------------------------
 @app.get("/tenants")
-def list_tenants(_: dict = Depends(require_permission("queue"))):
+def list_tenants(_=Depends(require_permission("queue"))):
     return {"tenants": store.list_tenants()}
 
 @app.post("/tenants")
-def create_tenant(body: TenantCreate, _: dict = Depends(require_permission("tenants"))):
+def create_tenant(body: TenantCreate, _=Depends(require_permission("tenants"))):
     store.create_tenant(
         tenant_id=body.id,
         display_name=body.display_name,
@@ -504,12 +504,12 @@ def create_tenant(body: TenantCreate, _: dict = Depends(require_permission("tena
     return {"ok": True, "tenant_id": body.id}
 
 @app.delete("/tenants/{tenant_id}")
-def delete_tenant(tenant_id: str, _: dict = Depends(require_permission("tenants"))):
+def delete_tenant(tenant_id: str, _=Depends(require_permission("tenants"))):
     store.delete_tenant(tenant_id)
     return {"ok": True}
 
 @app.post("/tenants/detect")
-def detect_tenant(body: IngestText, _: dict = Depends(require_permission("ingest"))):
+def detect_tenant(body: IngestText, _=Depends(require_permission("ingest"))):
     result = ingestor.from_raw_text(body.raw_text)
     text = result.get("text", "")
     tenants = store.list_tenants()
@@ -526,10 +526,10 @@ def mersi_health_check(
     period: Optional[str] = None,
     qbo_mode: str = "mock",
     fishbowl_mode: str = "mock",
-    _: dict = Depends(require_permission("audit"))
+    _=Depends(require_permission("audit"))
 ):
     """
-    Run the Mersi finance health check — pulls from QBO + Fishbowl,
+    Run the Mersi finance health check â€” pulls from QBO + Fishbowl,
     runs all reconciliation and integrity checks, returns structured findings.
 
     period:         YYYY-MM (defaults to current month)
@@ -544,9 +544,9 @@ def mersi_health_check(
 @app.get("/mersi/health-check/latest")
 def mersi_health_check_get(
     period: Optional[str] = None,
-    _: dict = Depends(require_permission("audit"))
+    _=Depends(require_permission("audit"))
 ):
-    """GET convenience wrapper — runs health check with mock data."""
+    """GET convenience wrapper â€” runs health check with mock data."""
     from audits.mersi_health_check import MersiHealthCheck
     checker = MersiHealthCheck()
     report = checker.run(period=period)
@@ -556,14 +556,14 @@ def mersi_health_check_get(
 # Ingestion
 # ---------------------------------------------------------------------------
 @app.post("/ingest/text")
-def ingest_text(body: IngestText, _: dict = Depends(require_permission("ingest"))):
+def ingest_text(body: IngestText, _=Depends(require_permission("ingest"))):
     result = ingestor.from_raw_text(body.raw_text)
     raw_text = result.get("text", "")
     suggestion_id, suggestion = _run_ingest_and_process(raw_text, body.tenant_id, body.jurisdiction, body.source)
     return {"suggestion_id": suggestion_id, "suggestion": suggestion}
 
 @app.post("/ingest/email")
-def ingest_email(body: IngestEmail, _: dict = Depends(require_permission("ingest"))):
+def ingest_email(body: IngestEmail, _=Depends(require_permission("ingest"))):
     result = ingestor.from_email(body.raw_email)
     raw_text = result.get("text", "")
     suggestion_id, suggestion = _run_ingest_and_process(raw_text, body.tenant_id, body.jurisdiction, "email")
@@ -574,7 +574,7 @@ async def ingest_upload(
     file: UploadFile = File(...),
     tenant_id: str = "default",
     jurisdiction: str = "TZ",
-    _: dict = Depends(require_permission("ingest"))
+    _=Depends(require_permission("ingest"))
 ):
     content = await file.read()
     result = ingestor.from_file(content, file.filename)
@@ -584,7 +584,7 @@ async def ingest_upload(
     return {"suggestion_id": suggestion_id, "suggestion": suggestion, "ingestion_warnings": warnings}
 
 @app.post("/ingest/webhook/{system}")
-def ingest_webhook(system: str, body: IngestWebhook, _: dict = Depends(require_permission("ingest"))):
+def ingest_webhook(system: str, body: IngestWebhook, _=Depends(require_permission("ingest"))):
     result = ingestor.from_webhook(body.payload, system)
     raw_text = result.get("text", "")
     suggestion_id, suggestion = _run_ingest_and_process(raw_text, body.tenant_id, body.jurisdiction, f"webhook:{system}")
@@ -595,12 +595,12 @@ def ingest_webhook(system: str, body: IngestWebhook, _: dict = Depends(require_p
 # ---------------------------------------------------------------------------
 @app.get("/suggestions/{tenant_id}")
 def list_suggestions(tenant_id: str, status: Optional[str] = None, limit: int = 50,
-                     _: dict = Depends(require_permission("queue"))):
+                     _=Depends(require_permission("queue"))):
     suggestions = store.list_suggestions(tenant_id=tenant_id, status=status, limit=limit)
     return {"suggestions": suggestions}
 
 @app.get("/suggestions/{tenant_id}/{suggestion_id}")
-def get_suggestion(tenant_id: str, suggestion_id: str, _: dict = Depends(require_permission("queue"))):
+def get_suggestion(tenant_id: str, suggestion_id: str, _=Depends(require_permission("queue"))):
     s = store.get_suggestion(suggestion_id)
     if not s or s.get("tenant_id") != tenant_id:
         raise HTTPException(status_code=404, detail="Suggestion not found")
@@ -611,7 +611,7 @@ def decide_suggestion(
     tenant_id: str,
     suggestion_id: str,
     body: DecideRequest,
-    _: dict = Depends(require_permission("queue"))
+    _=Depends(require_permission("queue"))
 ):
     decision = body.decision.upper()
 
@@ -634,59 +634,59 @@ def decide_suggestion(
     return {"ok": True, "decision": decision}
 
 @app.get("/stats/{tenant_id}")
-def stats(tenant_id: str, _: dict = Depends(require_permission("queue"))):
+def stats(tenant_id: str, _=Depends(require_permission("queue"))):
     return {"stats": store.stats(tenant_id)}
 
 # ---------------------------------------------------------------------------
 # Escalations
 # ---------------------------------------------------------------------------
 @app.get("/escalations")
-def list_escalations(tenant_id: Optional[str] = None, _: dict = Depends(require_permission("escalations"))):
+def list_escalations(tenant_id: Optional[str] = None, _=Depends(require_permission("escalations"))):
     all_escs = esc_store.list_all()
     if tenant_id:
         all_escs = [e for e in all_escs if e.get("tenant_id") == tenant_id]
     return {"escalations": all_escs}
 
 @app.get("/escalations/pending")
-def list_pending(_: dict = Depends(require_permission("escalations"))):
+def list_pending(_=Depends(require_permission("escalations"))):
     return {"escalations": esc_store.list_pending_human()}
 
 @app.get("/escalations/rejected")
-def list_rejected(_: dict = Depends(require_permission("escalations"))):
+def list_rejected(_=Depends(require_permission("escalations"))):
     return {"escalations": esc_store.list_rejected()}
 
 @app.get("/escalations/{esc_id}")
-def get_escalation(esc_id: str, _: dict = Depends(require_permission("escalations"))):
+def get_escalation(esc_id: str, _=Depends(require_permission("escalations"))):
     esc = esc_store.get(esc_id)
     if not esc:
         raise HTTPException(status_code=404, detail="Escalation not found")
     return {"escalation": esc}
 
 @app.post("/escalations/{esc_id}/approve")
-def approve_escalation(esc_id: str, body: DecideRequest, _: dict = Depends(require_permission("escalations"))):
+def approve_escalation(esc_id: str, body: DecideRequest, _=Depends(require_permission("escalations"))):
     engine = _get_escalation_engine()
     engine.process_human_approval(esc_id, True, body.notes)
     return {"ok": True, "decision": "APPROVED"}
 
 @app.post("/escalations/{esc_id}/reject")
-def reject_escalation(esc_id: str, body: DecideRequest, _: dict = Depends(require_permission("escalations"))):
+def reject_escalation(esc_id: str, body: DecideRequest, _=Depends(require_permission("escalations"))):
     engine = _get_escalation_engine()
     engine.process_human_approval(esc_id, False, body.notes)
     return {"ok": True, "decision": "REJECTED"}
 
 @app.post("/escalations/{esc_id}/resubmit")
-def resubmit_escalation(esc_id: str, body: ResubmitRequest, _: dict = Depends(require_permission("escalations"))):
+def resubmit_escalation(esc_id: str, body: ResubmitRequest, _=Depends(require_permission("escalations"))):
     engine = _get_escalation_engine()
     esc = esc_store.get(esc_id)
     tenant_id = esc.get("tenant_id", "default") if esc else "default"
     engine.process_resubmit(esc_id, body.operator_context, tenant_id)
-    return {"ok": True, "message": "Resubmitted — fresh escalation chain started"}
+    return {"ok": True, "message": "Resubmitted â€” fresh escalation chain started"}
 
 # ---------------------------------------------------------------------------
 # Tax
 # ---------------------------------------------------------------------------
 @app.post("/tax/analyze")
-def tax_analyze(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("tax"))):
+def tax_analyze(body: TaxAnalyzeRequest, _=Depends(require_permission("tax"))):
     orch = TaxOrchestrator()
     try:
         result = orch.analyze(
@@ -701,7 +701,7 @@ def tax_analyze(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("t
     return result
 
 @app.post("/tax/analyze/tz")
-def tax_analyze_tz(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("tax"))):
+def tax_analyze_tz(body: TaxAnalyzeRequest, _=Depends(require_permission("tax"))):
     agent = TaxAgentTZ()
     return agent.analyze(
         raw_input=body.raw_data,
@@ -711,7 +711,7 @@ def tax_analyze_tz(body: TaxAnalyzeRequest, _: dict = Depends(require_permission
     )
 
 @app.post("/tax/analyze/us")
-def tax_analyze_us(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("tax"))):
+def tax_analyze_us(body: TaxAnalyzeRequest, _=Depends(require_permission("tax"))):
     agent = TaxAgentUS()
     return agent.analyze(
         raw_input=body.raw_data,
@@ -721,15 +721,15 @@ def tax_analyze_us(body: TaxAnalyzeRequest, _: dict = Depends(require_permission
     )
 
 @app.get("/tax/rules/tz")
-def tax_rules_tz(_: dict = Depends(require_permission("tax"))):
+def tax_rules_tz(_=Depends(require_permission("tax"))):
     return {"rules": TZ_TAX_RULES}
 
 @app.get("/tax/rules/us")
-def tax_rules_us(_: dict = Depends(require_permission("tax"))):
+def tax_rules_us(_=Depends(require_permission("tax"))):
     return {"rules": US_TAX_RULES}
 
 @app.get("/tax/rates/config")
-def tax_rates_config(_: dict = Depends(require_permission("tax"))):
+def tax_rates_config(_=Depends(require_permission("tax"))):
     try:
         with open(_ROOT / "config/tax_rates.json") as f:
             return json.load(f)
@@ -737,7 +737,7 @@ def tax_rates_config(_: dict = Depends(require_permission("tax"))):
         raise HTTPException(status_code=404, detail="config/tax_rates.json not found")
 
 @app.post("/tax/compute/se-tax")
-def compute_se_tax(body: SEtaxRequest, _: dict = Depends(require_permission("tax"))):
+def compute_se_tax(body: SEtaxRequest, _=Depends(require_permission("tax"))):
     net = body.net_llc_income
     se_net = net * 0.9235
     ss_wage_base = 184500
@@ -759,7 +759,7 @@ def compute_se_tax(body: SEtaxRequest, _: dict = Depends(require_permission("tax
     }
 
 @app.post("/tax/compute/vat")
-def compute_vat(body: VATRequest, _: dict = Depends(require_permission("tax"))):
+def compute_vat(body: VATRequest, _=Depends(require_permission("tax"))):
     output_vat = body.taxable_sales * 0.18
     net_vat = output_vat - body.input_vat
     return {
@@ -773,7 +773,7 @@ def compute_vat(body: VATRequest, _: dict = Depends(require_permission("tax"))):
     }
 
 @app.post("/tax/compute/amt")
-def compute_amt(body: AMTRequest, _: dict = Depends(require_permission("tax"))):
+def compute_amt(body: AMTRequest, _=Depends(require_permission("tax"))):
     amt = body.turnover * 0.01
     return {
         "period": body.period,
@@ -783,7 +783,7 @@ def compute_amt(body: AMTRequest, _: dict = Depends(require_permission("tax"))):
     }
 
 @app.post("/tax/compute/provisional")
-def compute_provisional(body: ProvisionalRequest, _: dict = Depends(require_permission("tax"))):
+def compute_provisional(body: ProvisionalRequest, _=Depends(require_permission("tax"))):
     quarterly = body.estimated_annual_income * 0.30 / 4
     return {
         "quarter": body.quarter,
@@ -795,7 +795,7 @@ def compute_provisional(body: ProvisionalRequest, _: dict = Depends(require_perm
     }
 
 @app.post("/tax/compute/quarterly")
-def compute_quarterly_us(body: QuarterlyRequest, _: dict = Depends(require_permission("tax"))):
+def compute_quarterly_us(body: QuarterlyRequest, _=Depends(require_permission("tax"))):
     due_dates = {1: "April 15", 2: "June 15", 3: "September 15", 4: "January 15"}
     estimated_tax = body.estimated_annual_income * 0.25
     quarterly = estimated_tax / 4
@@ -829,7 +829,7 @@ class TaxAccountingRequest(BaseModel):
     enable_research: bool = False
 
 @app.post("/tax/supervise")
-def tax_supervise(body: TaxSuperviseRequest, _: dict = Depends(require_permission("tax"))):
+def tax_supervise(body: TaxSuperviseRequest, _=Depends(require_permission("tax"))):
     """Run a completed tax analysis through the Tax Supervisor for quality review."""
     supervisor = TaxSupervisorAgent()
     return supervisor.review(
@@ -839,7 +839,7 @@ def tax_supervise(body: TaxSuperviseRequest, _: dict = Depends(require_permissio
     )
 
 @app.post("/tax/analyze/supervised")
-def tax_analyze_supervised(body: TaxAnalyzeRequest, _: dict = Depends(require_permission("tax"))):
+def tax_analyze_supervised(body: TaxAnalyzeRequest, _=Depends(require_permission("tax"))):
     """Run tax analysis through jurisdiction agent then automatically pass to Tax Supervisor."""
     orch = TaxOrchestrator()
     try:
@@ -867,12 +867,12 @@ def tax_analyze_supervised(body: TaxAnalyzeRequest, _: dict = Depends(require_pe
     return supervisor_review
 
 @app.get("/tax/accounting/agents")
-def tax_accounting_agents(_: dict = Depends(require_permission("tax"))):
+def tax_accounting_agents(_=Depends(require_permission("tax"))):
     return {"agents": TAX_ACCOUNTANT_DEFINITIONS}
 
 @app.post("/tax/accounting/analyze")
-def tax_accounting_analyze(body: TaxAccountingRequest, _: dict = Depends(require_permission("tax"))):
-    """Tax Accountant — deferred tax, provisions, tax journal entries, reconciliations."""
+def tax_accounting_analyze(body: TaxAccountingRequest, _=Depends(require_permission("tax"))):
+    """Tax Accountant â€” deferred tax, provisions, tax journal entries, reconciliations."""
     agent = TaxAccountantAgent()
     result = agent.analyze(
         raw_input=body.raw_data,
@@ -890,7 +890,7 @@ def tax_accounting_analyze(body: TaxAccountingRequest, _: dict = Depends(require
                 junior_suggestion=result,
             )
             result["escalation_id"] = esc_id
-            result["escalation_message"] = "Auto-escalated due to CRITICAL flag — see escalation queue."
+            result["escalation_message"] = "Auto-escalated due to CRITICAL flag â€” see escalation queue."
         except Exception as exc:
             logger.warning("Tax accounting auto-escalation failed: %s", exc)
     return result
@@ -906,12 +906,12 @@ class TaxStrategyRequest(BaseModel):
     enable_research: bool = False
 
 @app.get("/tax/strategy/agents")
-def tax_strategy_agents(_: dict = Depends(require_permission("tax"))):
+def tax_strategy_agents(_=Depends(require_permission("tax"))):
     return {"agents": TAX_STRATEGY_DEFINITIONS}
 
 @app.post("/tax/strategy/analyze")
-def tax_strategy_analyze(body: TaxStrategyRequest, _: dict = Depends(require_permission("tax"))):
-    """Tax Strategy Manager — forward-looking tax planning, structuring, and risk assessment."""
+def tax_strategy_analyze(body: TaxStrategyRequest, _=Depends(require_permission("tax"))):
+    """Tax Strategy Manager â€” forward-looking tax planning, structuring, and risk assessment."""
     agent = TaxStrategyManagerAgent()
     result = agent.analyze(
         raw_input=body.raw_data,
@@ -938,11 +938,11 @@ def tax_strategy_analyze(body: TaxStrategyRequest, _: dict = Depends(require_per
 # FP&A
 # ---------------------------------------------------------------------------
 @app.get("/fpa/agents")
-def fpa_agents(_: dict = Depends(require_permission("fpa"))):
+def fpa_agents(_=Depends(require_permission("fpa"))):
     return {"agents": FPA_AGENT_DEFINITIONS}
 
 @app.post("/fpa/analyze")
-def fpa_analyze(body: FPAAnalyzeRequest, _: dict = Depends(require_permission("fpa"))):
+def fpa_analyze(body: FPAAnalyzeRequest, _=Depends(require_permission("fpa"))):
     if body.agent_type not in FPA_AGENTS:
         raise HTTPException(status_code=400, detail=f"Unknown FP&A agent: {body.agent_type}")
     agent = FPA_AGENTS[body.agent_type]()
@@ -977,11 +977,11 @@ def fpa_analyze(body: FPAAnalyzeRequest, _: dict = Depends(require_permission("f
 # Audit
 # ---------------------------------------------------------------------------
 @app.get("/audit/agents")
-def audit_agents(_: dict = Depends(require_permission("audit"))):
+def audit_agents(_=Depends(require_permission("audit"))):
     return {"agents": AUDIT_AGENT_DEFINITIONS}
 
 @app.post("/audit/analyze")
-def audit_analyze(body: AuditAnalyzeRequest, _: dict = Depends(require_permission("audit"))):
+def audit_analyze(body: AuditAnalyzeRequest, _=Depends(require_permission("audit"))):
     if body.agent_type not in AUDIT_AGENTS:
         raise HTTPException(status_code=400, detail=f"Unknown audit agent: {body.agent_type}")
     agent = AUDIT_AGENTS[body.agent_type]()
@@ -997,7 +997,7 @@ def audit_analyze(body: AuditAnalyzeRequest, _: dict = Depends(require_permissio
         )
         if result.get("mandatory_reporting", {}).get("sar_str_required"):
             result["_sar_alert"] = {
-                "banner": "⚠️ SAR/STR REQUIRED — Forensic Auditor has flagged mandatory reporting. Human operator must review and file.",
+                "banner": "âš ï¸ SAR/STR REQUIRED â€” Forensic Auditor has flagged mandatory reporting. Human operator must review and file.",
                 "severity": "CRITICAL"
             }
         return _phase4d_auto_escalate(result, body.tenant_id, "audit")
@@ -1030,11 +1030,11 @@ def audit_analyze(body: AuditAnalyzeRequest, _: dict = Depends(require_permissio
 # Treasury
 # ---------------------------------------------------------------------------
 @app.get("/treasury/agents")
-def treasury_agents(_: dict = Depends(require_permission("treasury"))):
+def treasury_agents(_=Depends(require_permission("treasury"))):
     return {"agents": TREASURY_AGENT_DEFINITIONS}
 
 @app.post("/treasury/analyze")
-def treasury_analyze(body: TreasuryAnalyzeRequest, _: dict = Depends(require_permission("treasury"))):
+def treasury_analyze(body: TreasuryAnalyzeRequest, _=Depends(require_permission("treasury"))):
     if body.agent_type not in TREASURY_AGENTS:
         raise HTTPException(status_code=400, detail=f"Unknown treasury agent: {body.agent_type}")
 
@@ -1062,11 +1062,11 @@ def treasury_analyze(body: TreasuryAnalyzeRequest, _: dict = Depends(require_per
 # Corporate Finance
 # ---------------------------------------------------------------------------
 @app.get("/corpfin/agents")
-def corpfin_agents(_: dict = Depends(require_permission("corpfin"))):
+def corpfin_agents(_=Depends(require_permission("corpfin"))):
     return {"agents": CORP_FINANCE_AGENT_DEFINITIONS}
 
 @app.post("/corpfin/analyze")
-def corpfin_analyze(body: CorpFinAnalyzeRequest, _: dict = Depends(require_permission("corpfin"))):
+def corpfin_analyze(body: CorpFinAnalyzeRequest, _=Depends(require_permission("corpfin"))):
     if body.agent_type not in CORP_FINANCE_AGENTS:
         raise HTTPException(status_code=400, detail=f"Unknown corp finance agent: {body.agent_type}")
 
@@ -1094,7 +1094,7 @@ def corpfin_analyze(body: CorpFinAnalyzeRequest, _: dict = Depends(require_permi
 # Universal (Phase4Orchestrator)
 # ---------------------------------------------------------------------------
 @app.post("/analyze")
-def universal_analyze(body: UniversalAnalyzeRequest, _: dict = Depends(require_permission("analyze"))):
+def universal_analyze(body: UniversalAnalyzeRequest, _=Depends(require_permission("analyze"))):
     orch = Phase4Orchestrator(API_KEY)
     result = orch.route(
         raw_data=body.raw_data,
@@ -1110,16 +1110,16 @@ def universal_analyze(body: UniversalAnalyzeRequest, _: dict = Depends(require_p
     return result
 
 # ---------------------------------------------------------------------------
-# Session 10 — Accounting Specialists (Cost, Revenue, Accounting Manager)
+# Session 10 â€” Accounting Specialists (Cost, Revenue, Accounting Manager)
 # ---------------------------------------------------------------------------
 @app.get("/accounting/agents")
-def accounting_specialist_agents(_: dict = Depends(require_permission("accounting_specialist"))):
+def accounting_specialist_agents(_=Depends(require_permission("accounting_specialist"))):
     return {"agents": ACCOUNTING_SPECIALIST_DEFINITIONS}
 
 @app.post("/accounting/analyze")
 def accounting_specialist_analyze(
     body: AccountingSpecialistRequest,
-    _: dict = Depends(require_permission("accounting_specialist"))
+    _=Depends(require_permission("accounting_specialist"))
 ):
     if body.agent_type not in ACCOUNTING_SPECIALIST_AGENTS:
         raise HTTPException(
@@ -1136,7 +1136,7 @@ def accounting_specialist_analyze(
                 include_us_rates=(body.jurisdiction == "US"),
                 include_tz_rates=(body.jurisdiction == "TZ")
             )
-            logger.info(f"Market data fetched for {body.agent_type} — source: {market_data.get('meta', {}).get('source')}")
+            logger.info(f"Market data fetched for {body.agent_type} â€” source: {market_data.get('meta', {}).get('source')}")
         except Exception as e:
             logger.warning(f"Market data fetch failed: {e}")
 
@@ -1160,21 +1160,21 @@ def accounting_specialist_analyze(
     if esc_id:
         result["_escalation_id"] = esc_id
         result["_escalation_notice"] = (
-            f"⚠️ CRITICAL findings auto-escalated — escalation ID: {esc_id}. "
+            f"âš ï¸ CRITICAL findings auto-escalated â€” escalation ID: {esc_id}. "
             "Review in the Escalations tab."
         )
 
     return result
 
 # ---------------------------------------------------------------------------
-# Session 10 — Market Data
+# Session 10 â€” Market Data
 # ---------------------------------------------------------------------------
 @app.get("/market/rates")
 def get_market_rates(
     base: str = "USD",
     include_us_rates: bool = True,
     include_tz_rates: bool = True,
-    _: dict = Depends(require_permission("market"))
+    _=Depends(require_permission("market"))
 ):
     """
     Fetch current market rates.
@@ -1191,7 +1191,7 @@ def get_market_rates(
         raise HTTPException(status_code=503, detail=f"Market data unavailable: {e}")
 
 @app.get("/market/fx/{from_currency}/{to_currency}")
-def get_fx_rate(from_currency: str, to_currency: str, _: dict = Depends(require_permission("market"))):
+def get_fx_rate(from_currency: str, to_currency: str, _=Depends(require_permission("market"))):
     """Get a single FX spot rate."""
     rate = market_adapter.get_fx_rate(from_currency.upper(), to_currency.upper())
     if rate is None:
@@ -1207,7 +1207,7 @@ def get_fx_rate(from_currency: str, to_currency: str, _: dict = Depends(require_
 # Reports
 # ---------------------------------------------------------------------------
 @app.get("/reports")
-def list_reports(tenant_id: Optional[str] = None, _: dict = Depends(require_permission("reports"))):
+def list_reports(tenant_id: Optional[str] = None, _=Depends(require_permission("reports"))):
     if not REPORTS_DIR.exists():
         return {"reports": []}
     files = sorted(REPORTS_DIR.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -1223,7 +1223,7 @@ def list_reports(tenant_id: Optional[str] = None, _: dict = Depends(require_perm
     return {"reports": result}
 
 @app.get("/reports/latest/{tenant_id}")
-def latest_report(tenant_id: str, _: dict = Depends(require_permission("reports"))):
+def latest_report(tenant_id: str, _=Depends(require_permission("reports"))):
     files = sorted(
         REPORTS_DIR.glob(f"{tenant_id}_*.pdf"),
         key=lambda p: p.stat().st_mtime, reverse=True
@@ -1234,8 +1234,10 @@ def latest_report(tenant_id: str, _: dict = Depends(require_permission("reports"
     return {"filename": f.name, "size_bytes": f.stat().st_size}
 
 @app.get("/reports/{filename}")
-def download_report(filename: str, _: dict = Depends(require_permission("reports"))):
+def download_report(filename: str, _=Depends(require_permission("reports"))):
     path = REPORTS_DIR / filename
     if not path.exists():
         raise HTTPException(status_code=404, detail="Report not found")
     return FileResponse(path=str(path), media_type="application/pdf", filename=filename)
+
+

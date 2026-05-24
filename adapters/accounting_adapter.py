@@ -6,10 +6,13 @@ Adding a new accounting system = subclass AccountingAdapter + implement 3 method
 """
 
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────
@@ -97,6 +100,14 @@ class QuickBooksAdapter(AccountingAdapter):
             "Content-Type": "application/json",
         }
 
+    @staticmethod
+    def _sanitise_query_param(value: str) -> str:
+        """
+        Sanitise a string before interpolating into a QBO query.
+        QBO does not support parameterised queries — sanitise manually.
+        """
+        return value.replace("'", "\\'").replace(";", "").replace("--", "")
+
     def push_journal_entry(self, entry: JournalEntry) -> dict:
         """
         POST a JournalEntry to QuickBooks as a JournalEntry object.
@@ -138,6 +149,7 @@ class QuickBooksAdapter(AccountingAdapter):
             je_id = data.get("JournalEntry", {}).get("Id", "")
             return {"success": True, "system_id": je_id, "message": "Journal entry created in QuickBooks"}
         except Exception as e:
+            logger.error(f"[QBO] push_journal_entry failed: {e}")
             return {"success": False, "system_id": "", "message": str(e)}
 
     def get_chart_of_accounts(self, tenant_id: str) -> list[dict]:
@@ -154,21 +166,29 @@ class QuickBooksAdapter(AccountingAdapter):
                 for a in accounts
             ]
         except Exception as e:
+            logger.error(f"[QBO] get_chart_of_accounts failed: {e}")
             return []
 
     def get_vendor(self, vendor_name: str, tenant_id: str) -> Optional[dict]:
         try:
             import requests
+            safe_name = self._sanitise_query_param(vendor_name)
             url = f"{self.BASE_URL}/company/{self.realm_id}/query"
-            query = f"SELECT * FROM Vendor WHERE DisplayName LIKE '%{vendor_name}%' MAXRESULTS 5"
+            query = f"SELECT * FROM Vendor WHERE DisplayName LIKE '%{safe_name}%' MAXRESULTS 5"
             resp = requests.get(url, headers=self._headers(), params={"query": query}, timeout=15)
             resp.raise_for_status()
             vendors = resp.json().get("QueryResponse", {}).get("Vendor", [])
             if vendors:
                 v = vendors[0]
-                return {"id": v["Id"], "name": v["DisplayName"], "email": v.get("PrimaryEmailAddr", {}).get("Address", ""), "terms": ""}
+                return {
+                    "id": v["Id"],
+                    "name": v["DisplayName"],
+                    "email": v.get("PrimaryEmailAddr", {}).get("Address", ""),
+                    "terms": "",
+                }
             return None
-        except Exception:
+        except Exception as e:
+            logger.error(f"[QBO] get_vendor failed: {e}")
             return None
 
     # ── DATA PULL METHODS (for reconciliation and audit checks) ───────────────
@@ -178,7 +198,8 @@ class QuickBooksAdapter(AccountingAdapter):
         try:
             import requests
             url = f"{self.BASE_URL}/company/{self.realm_id}/query"
-            query = f"SELECT * FROM Account WHERE AcctNum = '{account_code}'"
+            safe_code = self._sanitise_query_param(account_code)
+            query = f"SELECT * FROM Account WHERE AcctNum = '{safe_code}'"
             resp = requests.get(url, headers=self._headers(), params={"query": query}, timeout=15)
             resp.raise_for_status()
             accounts = resp.json().get("QueryResponse", {}).get("Account", [])
@@ -243,9 +264,15 @@ class QuickBooksAdapter(AccountingAdapter):
         try:
             import requests
             url = f"{self.BASE_URL}/company/{self.realm_id}/query"
-            query = "SELECT * FROM Invoice WHERE Balance > '0' MAXRESULTS 1000"
             if customer_name:
-                query = f"SELECT * FROM Invoice WHERE CustomerRef IN (SELECT Id FROM Customer WHERE DisplayName LIKE '%{customer_name}%') AND Balance > '0' MAXRESULTS 200"
+                safe_name = self._sanitise_query_param(customer_name)
+                query = (
+                    f"SELECT * FROM Invoice WHERE CustomerRef IN "
+                    f"(SELECT Id FROM Customer WHERE DisplayName LIKE '%{safe_name}%') "
+                    f"AND Balance > '0' MAXRESULTS 200"
+                )
+            else:
+                query = "SELECT * FROM Invoice WHERE Balance > '0' MAXRESULTS 1000"
             resp = requests.get(url, headers=self._headers(), params={"query": query}, timeout=15)
             resp.raise_for_status()
             invoices = resp.json().get("QueryResponse", {}).get("Invoice", [])
@@ -280,7 +307,6 @@ class QuickBooksAdapter(AccountingAdapter):
             )
             resp.raise_for_status()
             data = resp.json()
-            # Parse COGS line from P&L report
             for row in data.get("Rows", {}).get("Row", []):
                 if row.get("group") == "CostOfGoodsSold":
                     for col in row.get("Summary", {}).get("ColData", []):
@@ -309,8 +335,8 @@ class QuickBooksAdapter(AccountingAdapter):
                     result["61_90"]   += float(cols[4].get("value", 0) or 0)
                     result["over_90"] += float(cols[5].get("value", 0) or 0)
             result["total"] = sum(v for k, v in result.items() if k != "total")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[QBO] _parse_aging_report parse error: {e}")
         return result
 
     def _parse_trial_balance(self, data: dict) -> list[dict]:
@@ -325,9 +351,30 @@ class QuickBooksAdapter(AccountingAdapter):
                         "debit": float(cols[1].get("value", 0) or 0),
                         "credit": float(cols[2].get("value", 0) or 0),
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[QBO] _parse_trial_balance parse error: {e}")
         return accounts
+
+
+# ─────────────────────────────────────────────
+# STUB ADAPTERS (planned — not yet implemented)
+# ─────────────────────────────────────────────
+
+# class XeroAdapter(AccountingAdapter):
+#     """Planned: Xero accounting adapter."""
+#     ...
+
+# class OdooAdapter(AccountingAdapter):
+#     """Planned: Odoo adapter — use odoo19-mcp-server for read-only GL queries."""
+#     ...
+
+# class FishbowlAdapter(AccountingAdapter):
+#     """Planned: Fishbowl inventory/accounting adapter."""
+#     ...
+
+# class BillComAdapter(AccountingAdapter):
+#     """Planned: BILL.com AP automation adapter."""
+#     ...
 
 
 # ─────────────────────────────────────────────
@@ -338,6 +385,10 @@ class MockAdapter(AccountingAdapter):
     """
     In-memory adapter for testing and offline mode.
     Logs all calls; does not call any external API.
+    Mock data includes intentional discrepancies to exercise reconciliation logic:
+      - get_cogs_balance returns 38,200 vs Fishbowl 38,450 ($250 gap)
+      - get_account_balance("1200") returns 27,456 vs Fishbowl 27,189 ($267 gap)
+      - INV-205 is invoiced but not yet shipped (ASC 606 / IFRS 15 revenue recognition risk)
     """
 
     def __init__(self):
@@ -373,7 +424,7 @@ class MockAdapter(AccountingAdapter):
         import uuid
         fake_id = str(uuid.uuid4())[:8].upper()
         self.journal_entries.append({"id": fake_id, "entry": entry})
-        print(f"[MockAdapter] Journal entry posted: {fake_id} — {entry.description}")
+        logger.info(f"[MockAdapter] Journal entry posted: {fake_id} — {entry.description}")
         return {"success": True, "system_id": fake_id, "message": f"Mock journal entry posted: {fake_id}"}
 
     def get_chart_of_accounts(self, tenant_id: str) -> list[dict]:
@@ -383,10 +434,9 @@ class MockAdapter(AccountingAdapter):
         return {"id": "V001", "name": vendor_name, "email": "", "terms": "Net 30"}
 
     def get_account_balance(self, account_code: str) -> float:
-        # Simulate QBO 1200 Inventory balance — intentionally slightly off from
-        # Fishbowl total to trigger the sync discrepancy check
+        # Intentional $267 gap on 1200 vs Fishbowl to trigger sync discrepancy check
         mock_balances = {
-            "1200": 27_456.00,   # Fishbowl total (excl. manual) = 27,189.00 → gap of $267
+            "1200": 27_456.00,
             "1100": 48_320.00,
             "2000": 21_840.00,
         }
@@ -435,7 +485,7 @@ class MockAdapter(AccountingAdapter):
             {"invoice_id": "INV-202", "customer": "Brookdale Senior Living",
              "date": "2026-04-19", "due_date": "2026-05-19",
              "amount": 3_200.00, "balance": 3_200.00, "ref": "INV-2026-202"},
-            # Invoiced but not yet shipped — ASC 606 risk (matches Fishbowl mock)
+            # Invoiced but not yet shipped — ASC 606 / IFRS 15 revenue recognition risk
             {"invoice_id": "INV-205", "customer": "Atria Senior Living",
              "date": "2026-04-21", "due_date": "2026-05-21",
              "amount": 2_650.00, "balance": 2_650.00, "ref": "INV-2026-205"},
@@ -445,7 +495,8 @@ class MockAdapter(AccountingAdapter):
         return invoices
 
     def get_cogs_balance(self, from_date: str, to_date: str) -> float:
-        # Mock QBO COGS — intentionally slightly different from Fishbowl ($250 gap)
+        # Intentional $250 gap vs Fishbowl (38,450) to trigger COGS reconciliation alert
+        # Note: from_date / to_date are ignored in mock — returns fixed value
         return 38_200.00
 
 
@@ -461,10 +512,18 @@ def get_adapter(system: str = "mock", **kwargs) -> AccountingAdapter:
     adapters = {
         "quickbooks": QuickBooksAdapter,
         "mock": MockAdapter,
+        # Planned: "xero": XeroAdapter, "odoo": OdooAdapter,
+        # "fishbowl": FishbowlAdapter, "billcom": BillComAdapter,
     }
     cls = adapters.get(system.lower())
     if not cls:
-        raise ValueError(f"Unknown accounting system: {system}. Available: {list(adapters.keys())}")
+        raise ValueError(
+            f"Unknown accounting system: '{system}'. "
+            f"Available: {list(adapters.keys())}"
+        )
+    # Never pass kwargs to MockAdapter — it takes no init params
+    if system.lower() == "mock":
+        return cls()
     return cls(**kwargs) if kwargs else cls()
 
 
@@ -479,6 +538,14 @@ def suggestion_to_journal_entry(suggestion: dict, tenant_id: str) -> JournalEntr
     """
     je = suggestion.get("journal_entry", {})
     entries_raw = je.get("entries", [])
+
+    ref = suggestion.get("suggestion_id", "")
+    if len(ref) > 21:
+        logger.warning(
+            f"[suggestion_to_journal_entry] suggestion_id truncated for QBO 21-char limit: "
+            f"'{ref}' → '{ref[:21]}'"
+        )
+
     lines = [
         JournalLine(
             account_code=str(e.get("account", "").split("—")[0].strip()),
@@ -493,7 +560,7 @@ def suggestion_to_journal_entry(suggestion: dict, tenant_id: str) -> JournalEntr
         description=je.get("description", ""),
         date=je.get("date", ""),
         currency=je.get("currency", "USD"),
-        reference=suggestion.get("suggestion_id", "")[:21],
+        reference=ref[:21],
         lines=lines,
         tenant_id=tenant_id,
     )
