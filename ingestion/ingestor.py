@@ -33,7 +33,8 @@ import pdfplumber
 # ── OCR dependencies (graceful fallback if not installed) ──────────────────────
 try:
     import pytesseract
-    from pdf2image import convert_from_bytes
+    from pdf2image import convert_from_bytes, pdfinfo_from_bytes
+    from pdf2image.exceptions import PDFInfoNotInstalledError, PDFPageCountError
     from PIL import Image
     OCR_AVAILABLE = True
 except ImportError:
@@ -59,13 +60,45 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────────────────────────────────────
 
 # If pdfplumber extracts fewer characters than this, treat PDF as image-based
-MIN_TEXT_THRESHOLD = 80
+PDF_NATIVE_TEXT_MIN_CHARS = 50
+OCR_TEXT_MIN_CHARS = 20
+OCR_MAX_PAGES = 10
 
 # OCR config — single-column docs; optimise for financial documents
 TESSERACT_CONFIG = r"--oem 3 --psm 6"
 
 # DPI for PDF rasterisation — 300 gives good OCR accuracy; 200 is faster
 OCR_DPI = 300
+
+
+class IngestionError(RuntimeError):
+    def __init__(self, message: str, source: str, status_code: int = 400):
+        super().__init__(message)
+        self.source = source
+        self.status_code = status_code
+
+
+class OCRConfigurationError(IngestionError):
+    def __init__(self):
+        super().__init__(
+            "OCR is not available on this server. Please confirm Tesseract and Poppler are installed and on PATH.",
+            "upload_ocr_config_error",
+            503,
+        )
+
+
+class OCRProcessingError(IngestionError):
+    def __init__(self, message: str = "Document could not be read - image quality too low for OCR. Please upload a clearer scan or retype the content as text."):
+        super().__init__(message, "upload_ocr_failed", 400)
+
+
+class OCRPageLimitError(IngestionError):
+    def __init__(self):
+        super().__init__(
+            f"Scanned PDFs are limited to {OCR_MAX_PAGES} pages. Please split the document or upload a smaller file.",
+            "upload_ocr_page_limit",
+            400,
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -121,61 +154,73 @@ def _is_image_based_pdf(extracted_text: str) -> bool:
     """
     Heuristic: if pdfplumber returned very little text, the PDF is image-based.
     """
-    return len(extracted_text.strip()) < MIN_TEXT_THRESHOLD
+    return len(extracted_text.strip()) < PDF_NATIVE_TEXT_MIN_CHARS
+
+
+def _extract_image_text(image) -> tuple[str, list[int]]:
+    try:
+        ocr_data = pytesseract.image_to_data(
+            image,
+            config=TESSERACT_CONFIG,
+            output_type=pytesseract.Output.DICT,
+        )
+    except pytesseract.pytesseract.TesseractNotFoundError as exc:
+        raise OCRConfigurationError() from exc
+    except Exception as exc:
+        raise OCRProcessingError(f"OCR failed while reading the image: {exc}") from exc
+
+    words = []
+    confidences = []
+    for index, word in enumerate(ocr_data.get("text", [])):
+        try:
+            confidence = int(float(ocr_data["conf"][index]))
+        except (KeyError, TypeError, ValueError, IndexError):
+            confidence = -1
+        if confidence > 0 and word.strip():
+            words.append(word)
+            confidences.append(confidence)
+    return " ".join(words), confidences
 
 
 def _ocr_pdf(content: bytes) -> tuple[str, int, Optional[float]]:
     """
     Rasterise PDF pages and run Tesseract OCR on each.
     Returns (combined_text, page_count, avg_confidence).
-    Raises RuntimeError if OCR is not available.
+    Raises IngestionError subclasses for configuration and processing failures.
     """
     if not OCR_AVAILABLE:
-        raise RuntimeError(
-            "OCR libraries not installed. Run: "
-            "pip install pytesseract pdf2image Pillow "
-            "and install system packages: tesseract-ocr poppler-utils"
-        )
+        raise OCRConfigurationError()
 
     logger.info("Starting OCR processing — rasterising PDF pages at %d DPI", OCR_DPI)
 
     try:
-        images = convert_from_bytes(content, dpi=OCR_DPI)
-    except Exception as e:
-        raise RuntimeError(f"pdf2image conversion failed: {e}") from e
+        page_count = int(pdfinfo_from_bytes(content).get("Pages", 0))
+        if page_count > OCR_MAX_PAGES:
+            raise OCRPageLimitError()
+        images = convert_from_bytes(
+            content,
+            dpi=OCR_DPI,
+            first_page=1,
+            last_page=OCR_MAX_PAGES,
+        )
+    except OCRPageLimitError:
+        raise
+    except PDFInfoNotInstalledError as exc:
+        raise OCRConfigurationError() from exc
+    except PDFPageCountError as exc:
+        raise OCRProcessingError(f"PDF page count could not be read: {exc}") from exc
+    except Exception as exc:
+        raise OCRProcessingError(f"PDF could not be prepared for OCR: {exc}") from exc
 
     page_texts = []
     confidences = []
 
     for i, img in enumerate(images, start=1):
-        try:
-            # Get both text and confidence data
-            ocr_data = pytesseract.image_to_data(
-                img,
-                config=TESSERACT_CONFIG,
-                output_type=pytesseract.Output.DICT,
-            )
-
-            # Filter out low-confidence or empty words
-            words = []
-            for j, word in enumerate(ocr_data["text"]):
-                conf = int(ocr_data["conf"][j])
-                if conf > 0 and word.strip():
-                    words.append(word)
-                    confidences.append(conf)
-
-            page_text = " ".join(words)
-            if page_text.strip():
-                page_texts.append(f"[Page {i} — OCR]\n{page_text}")
-
-            logger.debug(
-                "Page %d OCR: %d words extracted",
-                i, len(words)
-            )
-
-        except Exception as e:
-            logger.warning("OCR failed on page %d: %s", i, e)
-            page_texts.append(f"[Page {i} — OCR FAILED: {e}]")
+        page_text, page_confidences = _extract_image_text(img)
+        confidences.extend(page_confidences)
+        if page_text.strip():
+            page_texts.append(f"[Page {i} - OCR]\n{page_text}")
+        logger.debug("Page %d OCR: %d words extracted", i, len(page_text.split()))
 
     combined = "\n\n".join(page_texts)
     page_count = len(images)
@@ -191,6 +236,21 @@ def _ocr_pdf(content: bytes) -> tuple[str, int, Optional[float]]:
     )
 
     return combined, page_count, avg_confidence
+
+
+def _ocr_image(content: bytes) -> tuple[str, Optional[float]]:
+    """Open an uploaded image and run Tesseract OCR directly."""
+    if not OCR_AVAILABLE:
+        raise OCRConfigurationError()
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            text, confidences = _extract_image_text(image)
+    except IngestionError:
+        raise
+    except Exception as exc:
+        raise OCRProcessingError(f"Image could not be opened for OCR: {exc}") from exc
+    confidence = round(sum(confidences) / len(confidences), 1) if confidences else None
+    return text, confidence
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -301,7 +361,7 @@ class DataIngestor:
                 )
                 try:
                     ocr_text, page_count, confidence = _ocr_pdf(content)
-                    if ocr_text.strip():
+                    if len(ocr_text.strip()) >= OCR_TEXT_MIN_CHARS:
                         return _make_result(
                             text=ocr_text,
                             source_type="file_pdf_ocr",
@@ -312,38 +372,30 @@ class DataIngestor:
                             ocr_confidence=confidence,
                             warnings=warnings,
                         )
-                    else:
-                        warnings.append(
-                            "OCR returned no text. PDF may be blank, heavily degraded, "
-                            "or in an unsupported format. Use Raw Text tab to paste content manually."
-                        )
-                        return _make_result(
-                            text="[OCR returned no text — see warnings]",
-                            source_type="file_pdf_ocr",
-                            filename=filename,
-                            ocr_used=True,
-                            ocr_page_count=page_count,
-                            ocr_confidence=confidence,
-                            warnings=warnings,
-                        )
-                except RuntimeError as e:
-                    warnings.append(f"OCR unavailable: {e}")
-                    logger.error("OCR error for '%s': %s", filename, e)
-                    return _make_result(
-                        text=(
-                            text if text.strip()
-                            else "[PDF has no text layer and OCR is not available — install pytesseract + poppler]"
-                        ),
-                        source_type="file_pdf",
-                        filename=filename,
-                        warnings=warnings,
-                    )
+                    raise OCRProcessingError()
+                except IngestionError:
+                    raise
 
             # Normal text-layer PDF
             return _make_result(
                 text=text,
                 source_type="file_pdf",
                 filename=filename,
+            )
+
+        # -- Images ---------------------------------------------------------
+        elif ext in (".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif"):
+            text, confidence = _ocr_image(content)
+            if len(text.strip()) < OCR_TEXT_MIN_CHARS:
+                raise OCRProcessingError()
+            return _make_result(
+                text=text,
+                source_type="file_image_ocr",
+                filename=filename,
+                ocr_used=True,
+                ocr_page_count=1,
+                ocr_confidence=confidence,
+                warnings=["OCR was applied - verify extracted text for accuracy."],
             )
 
         # ── CSV ─────────────────────────────────────────────────────────────

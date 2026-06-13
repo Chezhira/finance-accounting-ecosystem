@@ -832,3 +832,19 @@ Replace integration-only tests with mocked LLM responses + pytest structure.
 | 10 | Apr 2026 | Session 10 — Accounting Specialists + Market Data | ~180,000 | ~$1.80 |
 | 11 | Apr 2026 | Session 11 — Bug Fix & Hardening (15 bugs, 29 tests) | ~95,000 | ~$0.90 |
 | **Total** | | | **~1,699,500** | **~$16.70** |
+
+## v5.5.0 - Audit Export + OCR Upload Fallback
+
+### Added
+- Added `/audit/export` with JSON and CSV output for tenant-specific suggestion decision history.
+- Hardened the existing OCR fallback for scanned PDFs and added OCR for image uploads.
+
+### Safeguards
+- Audit export is read-only and does not modify suggestion records.
+- OCR fallback does not change agent prompts, orchestrator routing, or the DB schema.
+- Scanned PDFs are limited to 10 pages and low-quality OCR output is rejected instead of being passed to agents.
+- Missing OCR system dependencies return a clear API-level configuration error.
+
+### Tests
+- Added tests for audit export validation, filtering, empty results, and output formats.
+- Added mocked tests for PDF OCR fallback, image OCR, page limits, source propagation, and failure handling.

@@ -1,21 +1,22 @@
 ﻿"""
-FinOps Ecosystem API â€” v5.1.0
-Session 10: + CostAccountant, RevenueAccountant, AccountingManager agents
-           + LiveMarketDataAdapter (/market/rates, ?include_market_data= flag)
+FinOps Ecosystem API - v5.5.0
+Session 14: + Audit export and hardened OCR upload fallback
 All previous routes preserved exactly.
 """
 
+import csv
+import io
 import os
 import json
 import uuid
 import logging
 import threading
 import mimetypes
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, Header, HTTPException, Depends
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Imports â€” all agents and adapters
 # ---------------------------------------------------------------------------
 from db.store import OfflineStore
-from ingestion.ingestor import DataIngestor
+from ingestion.ingestor import DataIngestor, IngestionError
 from adapters.accounting_adapter import get_adapter, suggestion_to_journal_entry
 
 # Phase 1
@@ -452,8 +453,8 @@ def _handle_accounting_specialist_escalation(result: dict, tenant_id: str):
 def health():
     return {
         "status": "ok",
-        "version": "5.1.0",
-        "session": 10,
+        "version": "5.5.0",
+        "session": 14,
         "agents": {
             "accounting": ["JuniorAccountant", "SeniorAccountant", "FinancialController",
                            "CostAccountant", "RevenueAccountant", "AccountingManager"],
@@ -577,10 +578,17 @@ async def ingest_upload(
     _=Depends(require_permission("ingest"))
 ):
     content = await file.read()
-    result = ingestor.from_file(content, file.filename)
+    try:
+        result = ingestor.from_file(content, file.filename)
+    except IngestionError as exc:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"status": "error", "message": str(exc), "source": exc.source},
+        )
     raw_text = result.get("text", "")
     warnings = result.get("warnings", [])
-    suggestion_id, suggestion = _run_ingest_and_process(raw_text, tenant_id, jurisdiction, f"upload:{file.filename}")
+    source = "upload_ocr" if result.get("ocr_used") else f"upload:{file.filename}"
+    suggestion_id, suggestion = _run_ingest_and_process(raw_text, tenant_id, jurisdiction, source)
     return {"suggestion_id": suggestion_id, "suggestion": suggestion, "ingestion_warnings": warnings}
 
 @app.post("/ingest/webhook/{system}")
@@ -636,6 +644,70 @@ def decide_suggestion(
 @app.get("/stats/{tenant_id}")
 def stats(tenant_id: str, _=Depends(require_permission("queue"))):
     return {"stats": store.stats(tenant_id)}
+
+AUDIT_EXPORT_COLUMNS = [
+    "id", "tenant_id", "ingested_at", "source", "agent", "department",
+    "summary", "recommendation", "status", "decided_by", "decided_at",
+    "decision_reason",
+]
+
+
+@app.get("/audit/export")
+def export_audit_log(
+    tenant_id: str,
+    from_date: str,
+    to_date: str,
+    format: str = "json",
+    status: Optional[str] = None,
+    _=Depends(require_permission("queue")),
+):
+    if not store.get_tenant(tenant_id):
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    try:
+        parsed_from = date.fromisoformat(from_date)
+        parsed_to = date.fromisoformat(to_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="from_date and to_date must use YYYY-MM-DD format")
+
+    if parsed_from > parsed_to:
+        raise HTTPException(status_code=400, detail="from_date must not be later than to_date")
+
+    normalized_format = format.lower()
+    if normalized_format not in {"json", "csv"}:
+        raise HTTPException(status_code=400, detail="format must be one of: json, csv")
+
+    normalized_status = status.lower() if status else None
+    if normalized_status not in {None, "approved", "rejected", "escalated", "pending"}:
+        raise HTTPException(
+            status_code=400,
+            detail="status must be one of: approved, rejected, escalated, pending",
+        )
+
+    start_at = datetime.combine(parsed_from, time.min, tzinfo=timezone.utc).isoformat()
+    end_at = datetime.combine(parsed_to + timedelta(days=1), time.min, tzinfo=timezone.utc).isoformat()
+    records = store.export_audit_records(tenant_id, start_at, end_at, normalized_status)
+
+    if normalized_format == "csv":
+        output = io.StringIO(newline="")
+        writer = csv.DictWriter(output, fieldnames=AUDIT_EXPORT_COLUMNS, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(records)
+        filename = f"audit_export_{tenant_id}_{from_date}_{to_date}.csv"
+        return Response(
+            content=output.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    return {
+        "tenant_id": tenant_id,
+        "exported_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "from_date": from_date,
+        "to_date": to_date,
+        "total_records": len(records),
+        "records": records,
+    }
 
 # ---------------------------------------------------------------------------
 # Escalations

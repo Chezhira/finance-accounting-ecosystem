@@ -222,6 +222,71 @@ class OfflineStore:
             result.append(d)
         return result
 
+    def export_audit_records(
+        self,
+        tenant_id: str,
+        start_at: str,
+        end_at: str,
+        status: Optional[str] = None,
+    ) -> list[dict]:
+        """Return suggestion decisions in a bounded calendar-date range."""
+        event_timestamp = (
+            "CASE WHEN UPPER(status) IN ('PENDING', 'PENDING_REVIEW') "
+            "THEN created_at ELSE COALESCE(decided_at, created_at) END"
+        )
+        sql = f"""SELECT * FROM suggestions
+                  WHERE tenant_id = ?
+                    AND {event_timestamp} >= ?
+                    AND {event_timestamp} < ?"""
+        params: list = [tenant_id, start_at, end_at]
+
+        if status:
+            status_values = {
+                "approved": ("APPROVED",),
+                "rejected": ("REJECTED",),
+                "escalated": ("ESCALATED", "ESCALATE"),
+                "pending": ("PENDING", "PENDING_REVIEW"),
+            }[status]
+            placeholders = ",".join("?" for _ in status_values)
+            sql += f" AND UPPER(status) IN ({placeholders})"
+            params.extend(status_values)
+
+        sql += f" ORDER BY {event_timestamp} ASC"
+        with self._conn() as conn:
+            rows = conn.execute(sql, params).fetchall()
+
+        records = []
+        for row in rows:
+            stored = dict(row)
+            suggestion = json.loads(stored["suggestion_json"])
+            document_analysis = suggestion.get("document_analysis") or {}
+            classification = suggestion.get("classification") or {}
+            journal_entry = suggestion.get("journal_entry") or {}
+            raw_status = stored["status"].upper()
+            normalized_status = {
+                "ESCALATE": "escalated",
+                "PENDING_REVIEW": "pending",
+            }.get(raw_status, raw_status.lower())
+            records.append({
+                "id": stored["id"],
+                "tenant_id": stored["tenant_id"],
+                "ingested_at": stored["created_at"],
+                "source": suggestion.get("source") or document_analysis.get("source"),
+                "agent": stored.get("agent") or suggestion.get("agent"),
+                "department": suggestion.get("department") or classification.get("department"),
+                "summary": (
+                    suggestion.get("summary")
+                    or suggestion.get("executive_summary")
+                    or journal_entry.get("description")
+                ),
+                "recommendation": suggestion.get("recommendation") or suggestion.get("next_action"),
+                "status": normalized_status,
+                "decided_by": stored.get("decided_by"),
+                "decided_at": stored.get("decided_at"),
+                "decision_reason": stored.get("human_notes"),
+            })
+        return records
+
     def update_decision(self, suggestion_id: str, decision: str, decided_by: str, notes: str = "") -> bool:
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
