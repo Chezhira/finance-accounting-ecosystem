@@ -297,13 +297,10 @@ Instructions:
                 model=self.model,
                 max_tokens=self.max_tokens,
                 system=ACCOUNTING_MANAGER_SYSTEM_PROMPT,
-                messages=[
-                    {"role": "user", "content": user_prompt},
-                    {"role": "assistant", "content": "{"}
-                ]
+                messages=[{"role": "user", "content": user_prompt}]
             )
 
-            raw_text = "{" + response.content[0].text
+            raw_text = response.content[0].text
             result = self._extract_json(raw_text)
 
             elapsed = round(time.time() - start, 2)

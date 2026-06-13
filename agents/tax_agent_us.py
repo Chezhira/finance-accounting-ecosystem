@@ -312,14 +312,10 @@ Output raw JSON only."""
             model=self.model,
             max_tokens=8192,
             system=SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": "{"},   # prefill forces JSON start
-            ],
+            messages=[{"role": "user", "content": user_msg}],
         )
 
-        # Prepend the prefill character we injected
-        raw_text = "{" + response.content[0].text.strip()
+        raw_text = response.content[0].text.strip()
 
         # Warn if model was cut off mid-response
         if response.stop_reason == "max_tokens":
